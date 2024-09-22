@@ -1,5 +1,8 @@
 import { formatDate } from "../utils/time";
 import { prisma } from "../../src/config/database";
+import request from 'supertest';
+import app from '../../src/';
+import bcrypt from 'bcryptjs';
 
 export default async () => {
     console.log('Global Test Teardown');
@@ -276,6 +279,25 @@ export default async () => {
 
             },
         });
+
+        const hashed_password = await bcrypt.hash('testpass', 10);
+        // Create a admin account
+        await prisma.employee.create({
+            data: {
+                username: 'admin',
+                accessLevel: 'ADMIN',
+                isActive: true,
+                passwordCredentials: hashed_password,
+                firstName: 'admin',
+                lastName: 'admin',
+                middleName: 'admin',
+                role: 'admin',
+            },
+        });
+
+        const response = await request(app)
+            .post('/login') // Make sure this route exists
+            .send({ username: 'admin', password: 'testpass' });
 
     } catch (error) {
         console.error('Error seeding data:', error);
