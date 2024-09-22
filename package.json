@@ -17,7 +17,6 @@
                 "postbuild": "npm run copy-files",
                 "ts.check": "tsc --project tsconfig.json",
                 "add-build": "git add dist",
-                "postinstall": "prisma generate",
                 "secret": "ts-node ./src/secret.ts"
         },
         "pre-commit": [
