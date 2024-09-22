@@ -1,19 +1,21 @@
-import { differenceInHours, differenceInMinutes, format, getHours, getMinutes, isAfter, isBefore, set } from 'date-fns';
+import { differenceInHours, differenceInMinutes, format, getHours, getMinutes, isAfter, isBefore, parseISO, set } from 'date-fns';
 import { Request, Response } from 'express';
 import { prisma } from '../config/database';
 import { customThrowError } from '../middlewares/errorHandler';
 import { formatDate } from '../utils/time';
+import { toZonedTime } from 'date-fns-tz';
 
 
 // POST /api / attendance / time -in
 async function timeIn(req: Request, res: Response) {
+    const timeZone = 'Asia/Manila';
     const body = {
         employeeId: req.body.employeeId,
-        timeIn: new Date(req.body.timeStamp),
+        timeIn: toZonedTime(parseISO(req.body.timeStamp), timeZone),
     };
 
     // Validate input
-    if (!body.employeeId || !body.timeIn || isNaN(body.timeIn.getTime())) {
+    if (!body.employeeId || isNaN(body.timeIn.getTime())) {
         return customThrowError(400, 'Invalid time in');
     }
 
@@ -49,7 +51,7 @@ async function timeIn(req: Request, res: Response) {
     const currentAttendance = await prisma.attendance.findFirst({
         where: {
             employeeId: body.employeeId,
-            date: formatDate(body.timeIn),
+            date: format(body.timeIn, 'MMMM d, yyyy'),
         },
     });
 
@@ -232,9 +234,10 @@ async function timeOut(req: Request, res: Response) {
 
 // POST /api/attendance/lunch-in
 async function lunchIn(req: Request, res: Response) {
+    const timeZone = 'Asia/Manila';
     const body = {
         employeeId: req.body.employeeId,
-        lunchTimeIn: new Date(req.body.timeStamp),
+        lunchTimeIn: toZonedTime(parseISO(req.body.timeStamp), timeZone),
     };
 
     if (body.lunchTimeIn.toString() === 'Invalid Date') {
@@ -318,7 +321,7 @@ async function lunchIn(req: Request, res: Response) {
         }
     }
 
-    // if lunch has already started just resume
+    // If lunch has already started, just resume
     body.lunchTimeIn = currentAttendance.lunchTimeIn || body.lunchTimeIn;
 
     // Update attendance record with lunchTimeIn
@@ -338,9 +341,10 @@ async function lunchIn(req: Request, res: Response) {
 
 // POST /api/attendance/lunch-out
 async function lunchOut(req: Request, res: Response) {
+    const timeZone = 'Asia/Manila';
     const body = {
         employeeId: req.body.employeeId,
-        lunchTimeOut: new Date(req.body.timeStamp),
+        lunchTimeOut: toZonedTime(parseISO(req.body.timeStamp), timeZone),
     };
 
     if (body.lunchTimeOut.toString() === 'Invalid Date') {
@@ -379,7 +383,7 @@ async function lunchOut(req: Request, res: Response) {
         return customThrowError(400, 'Already clocked out');
     }
 
-    // get current schedule
+    // Get current schedule
     const employeeSchedule = await prisma.departmentSchedule.findFirst({
         where: {
             role: employee.role,
@@ -388,7 +392,7 @@ async function lunchOut(req: Request, res: Response) {
         select: { Schedule: true },
     });
 
-    // validate lunch time out if it is within the scheduled time
+    // Validate lunch time out if it is within the scheduled time
     const schedule = employeeSchedule?.Schedule;
     if (!schedule) {
         return customThrowError(400, 'Employee schedule not found');
@@ -410,7 +414,7 @@ async function lunchOut(req: Request, res: Response) {
         milliseconds: 0,
     });
 
-    // if lunch time out is later than the scheduled time set the lunch time out to the scheduled time
+    // If lunch time out is later than the scheduled time, set the lunch time out to the scheduled time
     if (schedule.scheduleType === 'FIXED' && isAfter(scheduledLunchTimeout, scheduleLunchEndTime)) {
         body.lunchTimeOut = scheduleLunchEndTime;
     }
@@ -439,12 +443,11 @@ async function lunchOut(req: Request, res: Response) {
 
     res.status(200).send('Lunch time out recorded');
 }
-
 // GET /api/attendance/today/:id
 async function getAttendanceOfEmployeeToday(req: Request, res: Response) {
     const employeeId = Number(req.params.id);
 
-    if (!employeeId) {
+    if (isNaN(employeeId)) {
         return customThrowError(400, 'Employee ID is required');
     }
 
@@ -456,11 +459,15 @@ async function getAttendanceOfEmployeeToday(req: Request, res: Response) {
         return customThrowError(404, 'Employee not found');
     }
 
-    // Fetch the attendance record of the employee today date
+    // Get today's date in Asia/Manila time zone
+    const today = toZonedTime(new Date(), 'Asia/Manila');
+    const formattedDate = format(today, 'MMMM d, yyyy');
+
+    // Fetch the attendance record of the employee for today
     const attendance = await prisma.attendance.findFirst({
         where: {
             employeeId: employee.id,
-            date: format(new Date(), 'MMMM d, yyyy'),
+            date: formattedDate,
         },
     });
 

@@ -3,6 +3,8 @@ import { prisma } from '../config/database';
 import { validateCreateAttendance, validateUpdateAttendance } from '../validate/attendance.validation';
 import { customThrowError } from '../middlewares/errorHandler';
 import { formatDate } from '../utils/time';
+import { parseISO, format } from 'date-fns';
+import { toZonedTime } from 'date-fns-tz';
 
 async function getAllAttendance(req: Request, res: Response) {
     const allAttendance = await prisma.attendance.findMany({
@@ -93,17 +95,19 @@ async function getAttendanceByEmployeeId(req: Request, res: Response) {
 }
 
 async function createAttendance(req: Request, res: Response) {
+    const timeZone = 'Asia/Manila';
+
     const body = {
         employeeId: req.body.employeeId,
-        date: new Date(req.body.date),
+        date: toZonedTime(parseISO(req.body.date), timeZone),
         status: req.body.status,
         scheduleType: req.body.scheduleType,
-        timeIn: new Date(req.body.timeIn),
-        timeOut: new Date(req.body.timeOut),
-        lunchTimeIn: new Date(req.body.lunchTimeIn),
-        lunchTimeOut: new Date(req.body.lunchTimeOut),
+        timeIn: toZonedTime(parseISO(req.body.timeIn), timeZone),
+        timeOut: toZonedTime(parseISO(req.body.timeOut), timeZone),
+        lunchTimeIn: toZonedTime(parseISO(req.body.lunchTimeIn), timeZone),
+        lunchTimeOut: toZonedTime(parseISO(req.body.lunchTimeOut), timeZone),
         overtimeTotal: req.body.overtimeTotal,
-    }
+    };
 
     validateCreateAttendance(body);
 
@@ -113,17 +117,17 @@ async function createAttendance(req: Request, res: Response) {
 
     if (!employeeExists) {
         customThrowError(404, 'Employee not found');
-    } ``
+    }
 
     const currentAttendance = await prisma.attendance.findFirst({
         where: {
             employeeId: body.employeeId,
-            date: formatDate(body.date),
+            date: format(body.date, 'yyyy-MM-dd'), // Adjust date format as needed
         },
     });
 
     if (currentAttendance) {
-        customThrowError(400, 'Attendance that day record already exists');
+        customThrowError(400, 'Attendance for that day already exists');
     }
 
     let totalHours = 0;
@@ -139,7 +143,7 @@ async function createAttendance(req: Request, res: Response) {
     await prisma.attendance.create({
         data: {
             employeeId: body.employeeId,
-            date: formatDate(body.date),
+            date: format(body.date, 'yyyy-MM-dd'), // Adjust date format as needed
             status: body.status,
             scheduleType: body.scheduleType,
             timeIn: body.timeIn,
@@ -162,15 +166,17 @@ async function updateAttendance(req: Request, res: Response) {
         customThrowError(400, "Invalid attendance ID");
     }
 
+    const timeZone = 'Asia/Manila';
+
     const body = {
         employeeId: req.body.employeeId,
-        date: new Date(req.body.date),
+        date: toZonedTime(parseISO(req.body.date), timeZone),
         status: req.body.status,
         scheduleType: req.body.scheduleType,
-        timeIn: new Date(req.body.timeIn),
-        timeOut: new Date(req.body.timeOut),
-        lunchTimeIn: new Date(req.body.lunchTimeIn),
-        lunchTimeOut: new Date(req.body.lunchTimeOut),
+        timeIn: toZonedTime(parseISO(req.body.timeIn), timeZone),
+        timeOut: toZonedTime(parseISO(req.body.timeOut), timeZone),
+        lunchTimeIn: toZonedTime(parseISO(req.body.lunchTimeIn), timeZone),
+        lunchTimeOut: toZonedTime(parseISO(req.body.lunchTimeOut), timeZone),
         overTimeTotal: req.body.overTimeTotal,
     }
 
@@ -179,7 +185,6 @@ async function updateAttendance(req: Request, res: Response) {
     const existingAttendance = await prisma.attendance.findUnique({
         where: { id: attendanceId },
     });
-
 
     if (!existingAttendance) {
         return customThrowError(404, "Attendance record not found");
@@ -193,23 +198,23 @@ async function updateAttendance(req: Request, res: Response) {
     if (body.timeOut && body.lunchTimeOut) {
         totalHours = (body.timeOut.getTime() - body.timeIn.getTime()) / 1000 / 60 / 60;
         totalLunchHours = (body.lunchTimeOut.getTime() - body.lunchTimeIn.getTime()) / 1000 / 60 / 60;
-        totalHoursWorked = totalHours - totalLunchHours + body.overTimeTotal;
-        totalHours += body.overTimeTotal;
+        totalHoursWorked = totalHours - totalLunchHours + (body.overTimeTotal || 0);
+        totalHours += (body.overTimeTotal || 0);
     }
 
     await prisma.attendance.update({
         where: { id: attendanceId },
         data: {
-            date: formatDate(body.date ?? existingAttendance.date),
+            date: format(body.date, 'yyyy-MM-dd'), // Adjust date format as needed
             status: body.status ?? existingAttendance.status,
             timeOut: body.timeOut ?? existingAttendance.timeOut,
             timeIn: body.timeIn ?? existingAttendance.timeIn,
             lunchTimeIn: body.lunchTimeIn ?? existingAttendance.lunchTimeIn,
             lunchTimeOut: body.lunchTimeOut ?? existingAttendance.lunchTimeOut,
-            timeTotal: totalHours ?? existingAttendance.timeTotal,
+            timeTotal: totalHours || existingAttendance.timeTotal,
             overTimeTotal: body.overTimeTotal ?? existingAttendance.overTimeTotal,
-            timeHoursWorked: totalHoursWorked ?? existingAttendance.timeHoursWorked,
-            lunchTimeTotal: totalLunchHours ?? existingAttendance.lunchTimeTotal,
+            timeHoursWorked: totalHoursWorked || existingAttendance.timeHoursWorked,
+            lunchTimeTotal: totalLunchHours || existingAttendance.lunchTimeTotal,
         },
     });
 
