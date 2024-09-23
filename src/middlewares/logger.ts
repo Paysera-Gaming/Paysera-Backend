@@ -5,7 +5,7 @@ import pinoHttp from 'pino-http';
 
 const logger = pino({
     level: configEnv.NODE_ENV === 'development' ? 'debug' : 'info',
-    transport: process.env.NODE_ENV === 'production' ? undefined : {
+    transport: {
         target: 'pino-pretty',
         options: {
             colorize: true, // --colorize
