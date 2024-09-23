@@ -1,6 +1,7 @@
 import { asyncHandler } from '../middlewares/errorHandler';
 import express, { Request, Response } from 'express';
 import os from 'os';
+import { configEnv } from '../config/dotenv';
 
 const sampleRouter = express.Router();
 
@@ -32,19 +33,7 @@ sampleRouter.get('/', (req: Request, res: Response) => {
 
     const wew = res.getHeader('A');
 
-    res.send('Hello, TypeScrip Express!');
-});
-
-sampleRouter.get('/jazz', (req: Request, res: Response) => {
-    res.send('Jazz Kalbo!');
-});
-
-sampleRouter.get('/justyn', (req: Request, res: Response) => {
-    res.send('justyn Kalbo!');
-});
-
-sampleRouter.get('/lue', (req: Request, res: Response) => {
-    res.send('Lue Kalbo!');
+    res.send(`This is Paysera-Backend! Origin ${configEnv.ORIGIN} ${configEnv.NODE_ENV}`);
 });
 
 sampleRouter.get('/api', (req: Request, res: Response) => {
