@@ -27,18 +27,20 @@ const port = configEnv.PORT || 3000;
 const limiter = rateLimit({
     windowMs: 1 * 60 * 1000, // 1 minutes
     max: 100, // Limit each IP to 100 requests per windowMs
+    skip: (req) => req.method === 'OPTIONS', // Skip rate limiting for preflight requests
 });
+
+app.enable('trust proxy');
 
 // Essential Middleware
 app.use(limiter); // Rate limiting
 app.use(cookieParser()); // Parse cookies
 app.use(cors({
-    origin: [configEnv.ORIGIN], // Reflect the request origin
+    origin: [configEnv.ORIGIN, "https://paysera-timekeeping-gngmv.ondigitalocean.app"], // Reflect the request origin
     credentials: true, // Allow sending cookies
 })); // Enable CORS
-if (configEnv.NODE_ENV === 'development') {
-    app.use(httpLoggerMiddleware);
-}
+app.options('*', cors()); // Handle preflight requests
+app.use(httpLoggerMiddleware);
 app.use(express.urlencoded({ extended: true })); // Parse URL-encoded bodies
 app.use(express.json()); // Parse JSON bodies
 app.use(helmet()); // Security headers with Helmet
@@ -68,12 +70,11 @@ app.use((req, res, next) => {
     res.status(404).send({ error: 'Route Not Found' });
 });
 
-if (configEnv.NODE_ENV === 'development') {
+if (configEnv.NODE_ENV !== 'test') {
     app.listen(port, () => {
-        console.log(`Server is running at http://localhost:${port}`);
+        console.log(`Server is running on port ${port} Origin ${configEnv.ORIGIN}`);
     });
 }
-
 // Export the server for testing
 const server = http.createServer(app);
 export { server };
