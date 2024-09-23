@@ -1,16 +1,20 @@
-import { differenceInHours, differenceInMinutes, format, getHours, getMinutes, isAfter, isBefore, parseISO, set } from 'date-fns';
+import { differenceInMinutes, format, getHours, getMinutes, isAfter, isBefore, parseISO, set } from 'date-fns';
 import { Request, Response } from 'express';
 import { prisma } from '../config/database';
 import { customThrowError } from '../middlewares/errorHandler';
-import { formatDate } from '../utils/time';
 import { toZonedTime } from 'date-fns-tz';
 
 
 // POST /api / attendance / time -in
 async function timeIn(req: Request, res: Response) {
+
+    if (!req.body.employeeId || !req.body.timeStamp) {
+        return customThrowError(400, 'Employee ID and time in are required');
+    }
+
     const timeZone = 'Asia/Manila';
     const body = {
-        employeeId: req.body.employeeId,
+        employeeId: Number(req.body.employeeId),
         timeIn: toZonedTime(parseISO(req.body.timeStamp), timeZone),
     };
 
@@ -114,9 +118,14 @@ async function timeIn(req: Request, res: Response) {
 
 // POST /api/attendance/time-out
 async function timeOut(req: Request, res: Response) {
+    if (!req.body.employeeId || !req.body.timeStamp) {
+        return customThrowError(400, 'Employee ID and time in are required');
+    }
+
+    const timeZone = 'Asia/Manila';
     const body = {
-        employeeId: req.body.employeeId,
-        timeOut: new Date(req.body.timeStamp),
+        employeeId: Number(req.body.employeeId),
+        timeOut: toZonedTime(parseISO(req.body.timeStamp), timeZone),
     };
 
     if (isNaN(body.timeOut.getTime())) {
@@ -234,6 +243,11 @@ async function timeOut(req: Request, res: Response) {
 
 // POST /api/attendance/lunch-in
 async function lunchIn(req: Request, res: Response) {
+
+    if (!req.body.employeeId || !req.body.timeStamp) {
+        return customThrowError(400, 'Employee ID and time in are required');
+    }
+
     const timeZone = 'Asia/Manila';
     const body = {
         employeeId: req.body.employeeId,
@@ -341,9 +355,14 @@ async function lunchIn(req: Request, res: Response) {
 
 // POST /api/attendance/lunch-out
 async function lunchOut(req: Request, res: Response) {
+
+    if (!req.body.employeeId || !req.body.timeStamp) {
+        return customThrowError(400, 'Employee ID and time in are required');
+    }
+
     const timeZone = 'Asia/Manila';
     const body = {
-        employeeId: req.body.employeeId,
+        employeeId: Number(req.body.employeeId),
         lunchTimeOut: toZonedTime(parseISO(req.body.timeStamp), timeZone),
     };
 
