@@ -15,6 +15,8 @@ const envSchema = z.object({
     JWT_SECRET: z.string(),
     ORIGIN: z.string().url(),
     SALT_ROUNDS: z.string().regex(/^\d+$/).transform(Number),
+    ACCOUNT_USERNAME: z.string(),
+    ACCOUNT_PASSWORD: z.string(),
 });
 
 // Parse and validate the environment variables
