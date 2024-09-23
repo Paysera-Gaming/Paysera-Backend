@@ -2,6 +2,8 @@ import { Request, Response } from "express";
 import { prisma } from "../config/database";
 import { validateCreateDepartment, validateDepartmentAssignEmployee, validateDepartmentAssignLeader, validateDepartmentRemoveEmployee, validateUpdateDepartment } from "../validate/department.validation";
 import { customThrowError } from '../middlewares/errorHandler';
+import { toZonedTime } from 'date-fns-tz';
+
 
 async function getAllDepartments(req: Request, res: Response) {
     const allDepartments = await prisma.department.findMany({
@@ -35,10 +37,6 @@ async function getAllDepartments(req: Request, res: Response) {
             }
         }
     });
-
-    if (!allDepartments || allDepartments.length === 0) {
-        return customThrowError(404, 'No departments found');
-    }
 
     res.status(200).send(allDepartments);
 }
@@ -236,10 +234,6 @@ async function getDepartmentSchedules(req: Request, res: Response) {
         },
     });
 
-    // if (!schedules || schedules.length === 0) {
-    //     return customThrowError(404, "No schedules found for this department");
-    // }
-
     res.status(200).send(schedules);
 }
 
@@ -268,10 +262,6 @@ async function getDepartmentSchedulesToday(req: Request, res: Response) {
             }
         },
     });
-
-    // if (!schedules || schedules.length === 0) {
-    //     return customThrowError(404, "No schedules found for this department");
-    // }
 
     res.status(200).send(schedules);
 }
@@ -324,14 +314,18 @@ async function getDepartmentAttendanceToday(req: Request, res: Response) {
         return customThrowError(404, "No employees found in this department");
     }
 
+    const timeZone = 'Asia/Manila';
+    const startOfDay = toZonedTime(new Date(new Date().setHours(0, 0, 0, 0)), timeZone);
+    const endOfDay = toZonedTime(new Date(new Date().setHours(23, 59, 59, 999)), timeZone);
+
     const attendance = await prisma.attendance.findMany({
         where: {
             employeeId: {
                 in: employeeIds
             },
             createdAt: {
-                gte: new Date(new Date().setHours(0, 0, 0, 0)),
-                lt: new Date(new Date().setHours(23, 59, 59, 999))
+                gte: startOfDay,
+                lt: endOfDay
             },
         },
         orderBy: {

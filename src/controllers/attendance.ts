@@ -27,10 +27,6 @@ async function getAllAttendance(req: Request, res: Response) {
         }
     });
 
-    if (!allAttendance || allAttendance.length === 0) {
-        customThrowError(404, "No attendance found");
-    }
-
     res.status(200).send(allAttendance);
 }
 
@@ -59,10 +55,6 @@ async function getAttendanceById(req: Request, res: Response) {
         }
     });
 
-    if (!attendance) {
-        customThrowError(404, "Attendance not found");
-    }
-
     res.status(200).send(attendance);
 }
 
@@ -86,10 +78,6 @@ async function getAttendanceByEmployeeId(req: Request, res: Response) {
             date: 'asc',
         },
     });
-
-    if (!employeeAttendance || employeeAttendance.length === 0) {
-        customThrowError(404, "No attendance records found for this employee");
-    }
 
     res.status(200).send(employeeAttendance);
 }
