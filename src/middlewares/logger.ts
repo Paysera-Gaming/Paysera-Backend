@@ -3,20 +3,23 @@ import { NextFunction, Request, Response } from 'express';
 import pino from 'pino';
 import pinoHttp from 'pino-http';
 
-const logger = pino({
-    level: configEnv.NODE_ENV === 'development' ? 'debug' : 'info',
-    transport: {
-        target: 'pino-pretty',
-        options: {
-            colorize: true, // --colorize
-            colorizeObjects: true, //--colorizeObjects
-            levelFirst: true, // Show the log level at the start of the log line
-            translateTime: 'time', // Format the timestamp
-            ignore: 'pid,hostname', // Optionally ignore certain fields
-            singleLine: false, // --singleLine
-        },
+const isDevelopment = configEnv.NODE_ENV === 'development';
 
-    },
+const logger = pino({
+    level: isDevelopment ? 'debug' : 'info',
+    ...(isDevelopment && {
+        transport: {
+            target: 'pino-pretty',
+            options: {
+                colorize: true, // --colorize
+                colorizeObjects: true, //--colorizeObjects
+                levelFirst: true, // Show the log level at the start of the log line
+                translateTime: 'time', // Format the timestamp
+                ignore: 'pid,hostname', // Optionally ignore certain fields
+                singleLine: false, // --singleLine
+            },
+        },
+    }),
 });
 
 const customHttpLoggerMiddleware = () => {
