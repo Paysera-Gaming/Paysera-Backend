@@ -23,14 +23,17 @@ import { httpLoggerMiddleware } from './middlewares/logger';
 const app = express();
 const port = configEnv.PORT || 3000;
 
+if (process.env.NODE_ENV === 'production') {
+    app.set('trust proxy', 1); // Trust first proxy in production
+    app.enable('trust proxy');
+}
+
 // Rate limiting to prevent brute-force attacks
 const limiter = rateLimit({
     windowMs: 1 * 60 * 1000, // 1 minutes
     max: 100, // Limit each IP to 100 requests per windowMs
     skip: (req) => req.method === 'OPTIONS', // Skip rate limiting for preflight requests
 });
-
-app.enable('trust proxy');
 
 // Essential Middleware
 app.use(limiter); // Rate limiting
@@ -39,7 +42,10 @@ app.use(cors({
     origin: [configEnv.ORIGIN, "https://paysera-timekeeping-gngmv.ondigitalocean.app"], // Reflect the request origin
     credentials: true, // Allow sending cookies
 })); // Enable CORS
-app.options('*', cors()); // Handle preflight requests
+app.options('*', cors({
+    origin: [configEnv.ORIGIN, "https://paysera-timekeeping-gngmv.ondigitalocean.app"], // Reflect the request origin
+    credentials: true, // Allow sending cookies
+})); // Handle preflight requests
 app.use(httpLoggerMiddleware);
 app.use(express.urlencoded({ extended: true })); // Parse URL-encoded bodies
 app.use(express.json()); // Parse JSON bodies
