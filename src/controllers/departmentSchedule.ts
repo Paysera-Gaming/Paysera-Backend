@@ -2,9 +2,8 @@ import { prisma } from '../config/database';
 import { customThrowError } from '../middlewares/errorHandler';
 import { validateCreateRoleSchedule } from '../validate/schedule.validation';
 import { validateUpdateRoleSchedule } from '../validate/scheduleUpdate.validation';
-import { Request, Response } from 'express';
+import e, { Request, Response } from 'express';
 import { toZonedTime } from 'date-fns-tz';
-import department from './department';
 
 // GET /department-schedule
 async function getAllDepartmentSchedules(req: Request, res: Response) {
@@ -45,7 +44,6 @@ async function getDepartmentScheduleById(req: Request, res: Response) {
         return;
     }
 
-
     res.status(200).send(existingDepartmentSchedule);
 }
 
@@ -78,6 +76,16 @@ async function createDepartmentSchedule(req: Request, res: Response) {
         lunchStartTime: lunchStartTime,
         lunchEndTime: lunchEndTime,
     })
+
+
+    // validate schedule
+    if (startTime >= endTime) {
+        customThrowError(400, "Start time must be before end time");
+    } else if (lunchStartTime <= startTime || lunchStartTime >= endTime) {
+        customThrowError(400, "Lunch start time must be between start time and end time");
+    } else if (lunchEndTime <= lunchStartTime || lunchEndTime >= endTime) {
+        customThrowError(400, "Lunch end time must be between lunch start time and end time");
+    }
 
     const schedule = await prisma.schedule.create({
         data: {
