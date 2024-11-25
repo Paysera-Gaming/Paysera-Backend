@@ -125,11 +125,34 @@ async function createDepartment(req: Request, res: Response) {
         }
     }
 
+    const employee = await prisma.employee.findUnique({
+        where: { id: body.leaderId }
+    });
+
+    if (!employee) {
+        return customThrowError(404, "Leader not found");
+    } else if (employee.accessLevel === "EMPLOYEE") {
+        return customThrowError(400, "Employee is not an admin or team leader");
+    }
+
+    const existingDepartment = await prisma.department.findFirst({
+        where: { name: body.name },
+    });
+
+    if (existingDepartment) {
+        return customThrowError(400, "Department name already exists");
+    }
+
     // Create department
     await prisma.department.create({
         data: {
             name: body.name || "Department Name",
             Leader: {
+                connect: {
+                    id: body.leaderId
+                }
+            },
+            Employees: {
                 connect: {
                     id: body.leaderId
                 }
@@ -243,13 +266,17 @@ async function getDepartmentSchedulesToday(req: Request, res: Response) {
         return customThrowError(404, "Invalid department ID");
     }
 
+    const timeZone = 'Asia/Manila';
+    const startOfDay = toZonedTime(new Date(new Date().setHours(0, 0, 0, 0)), timeZone);
+    const endOfDay = toZonedTime(new Date(new Date().setHours(23, 59, 59, 999)), timeZone);
+
     const schedules = await prisma.departmentSchedule.findMany({
         where: {
             departmentId: departmentId,
             Schedule: {
                 startTime: {
-                    gte: new Date(new Date().setHours(0, 0, 0, 0)),
-                    lt: new Date(new Date().setHours(23, 59, 59, 999))
+                    gte: startOfDay,
+                    lt: endOfDay
                 }
             }
         },
@@ -278,10 +305,6 @@ async function getDepartmentAttendance(req: Request, res: Response) {
 
     // Get all employee IDs for the department attendance
     const employeeIds = employee.map(emp => emp.id);
-
-    if (employeeIds.length === 0) {
-        return customThrowError(404, "No employees found in this department");
-    }
 
     const attendance = await prisma.attendance.findMany({
         where: {
