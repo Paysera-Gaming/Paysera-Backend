@@ -133,10 +133,10 @@ const createEmployee = async (req: Request, res: Response) => {
     // Create employee
     await prisma.employee.create({
         data: {
-            username: req.body.username,
-            firstName: req.body.firstName,
-            lastName: req.body.lastName,
-            middleName: req.body.middleName,
+            username: req.body.username.trim(),
+            firstName: req.body.firstName.trim(),
+            lastName: req.body.lastName.trim(),
+            middleName: req.body.middleName.trim(),
             accessLevel: req.body.accessLevel,
             isActive: req.body.isActive,
             passwordCredentials: hashedPassword,
@@ -151,6 +151,16 @@ const updateEmployee = async (req: Request, res: Response) => {
     const employeeId = Number(req.params.id) || -1;
 
     validateUpdateEmployee(req.body);
+    const body = {
+        username: req.body.username ? req.body.username.trim() : undefined,
+        firstName: req.body.firstName ? req.body.firstName.trim() : undefined,
+        lastName: req.body.lastName ? req.body.lastName.trim() : undefined,
+        middleName: req.body.middleName ? req.body.middleName.trim() : undefined,
+        accessLevel: req.body.accessLevel,
+        isActive: req.body.isActive,
+        role: req.body.role,
+        password: req.body.password ? req.body.password.trim() : undefined,
+    }
 
     const existingEmployee = await prisma.employee.findUnique({
         where: { id: employeeId },
@@ -164,14 +174,15 @@ const updateEmployee = async (req: Request, res: Response) => {
     await prisma.employee.update({
         where: { id: Number(req.params.id) },
         data: {
-            username: req.body.username ?? existingEmployee.username,
-            firstName: req.body.firstName ?? existingEmployee.firstName,
-            lastName: req.body.lastName ?? existingEmployee.lastName,
-            middleName: req.body.middleName ?? existingEmployee.middleName,
+            username: body.username ?? existingEmployee.username,
+            firstName: body.firstName ?? existingEmployee.firstName,
+            lastName: body.lastName ?? existingEmployee.lastName,
+            middleName: body.middleName ?? existingEmployee.middleName,
             accessLevel: req.body.accessLevel ?? existingEmployee.accessLevel,
             isActive: req.body.isActive ?? existingEmployee.isActive,
             departmentId: req.body.departmentId ?? existingEmployee.departmentId,
             role: req.body.role ?? existingEmployee.role,
+            passwordCredentials: body.password ? await bcrypt.hash(body.password, 10) : existingEmployee.passwordCredentials,
         },
     });
 

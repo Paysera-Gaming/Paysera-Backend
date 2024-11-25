@@ -35,8 +35,12 @@ const generateRefreshToken = (user: any) => {
 };
 
 const login = async (req: Request, res: Response) => {
-    const { username, password } = validateLogin(req.body);
+    const body = {
+        username: req.body.username.trim(),
+        password: req.body.password.trim(),
+    };
 
+    const { username, password } = validateLogin(body);
     const user = await prisma.employee.findUnique({
         where: { username },
     });

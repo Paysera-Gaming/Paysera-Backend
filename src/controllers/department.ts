@@ -146,7 +146,7 @@ async function createDepartment(req: Request, res: Response) {
     // Create department
     await prisma.department.create({
         data: {
-            name: body.name || "Department Name",
+            name: body.name.trim() || "Department Name",
             Leader: {
                 connect: {
                     id: body.leaderId
@@ -193,7 +193,7 @@ async function updateDepartmentById(req: Request, res: Response) {
     await prisma.department.update({
         where: { id: departmentId },
         data: {
-            name: req.body.name,
+            name: req.body.name.trim() || createDepartment.name,
             leaderId: req.body.leaderId,
         },
     });
@@ -364,7 +364,7 @@ async function getDepartmentAttendanceToday(req: Request, res: Response) {
 
 async function updateDepartmentAssignEmployee(req: Request, res: Response) {
     const departmentId = Number(req.params.id);
-    const role = String(req.body.role).toLocaleUpperCase();
+    const role = String(req.body.role).toLocaleUpperCase().trim();
     const username = req.body.username;
     validateDepartmentAssignEmployee({ departmentId, role, username });
 
@@ -387,7 +387,7 @@ async function updateDepartmentAssignEmployee(req: Request, res: Response) {
     await prisma.employee.update({
         where: { id: employee.id },
         data: {
-            role: String(req.body.role).toLocaleUpperCase(),
+            role: String(req.body.role).toLocaleUpperCase().trim(),
             Department: {
                 connect: {
                     id: departmentId
