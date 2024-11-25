@@ -78,12 +78,8 @@ async function timeIn(req: Request, res: Response) {
     } else {
         let effectiveTimeIn = body.timeIn;
 
-        // Extract hour and minute from the employee's time in
-        const timeInHour = getHours(body.timeIn);
-        const timeInMinute = getMinutes(body.timeIn);
-
-        // Schedule start time with only hour and minute
-        const scheduledStartTime = set(new Date(), {
+        // Schedule start time with only hour and minute in Manila time
+        const scheduledStartTime = set(toZonedTime(new Date(), timeZone), {
             hours: getHours(schedule.startTime),
             minutes: getMinutes(schedule.startTime),
             seconds: 0,
@@ -181,11 +177,11 @@ async function timeOut(req: Request, res: Response) {
         return customThrowError(400, 'Time currently on break');
     }
 
-    const timeIn = new Date(currentAttendance.timeIn);
+    const timeIn = toZonedTime(new Date(currentAttendance.timeIn), 'Asia/Manila');
 
     // Use only time components for calculations
-    const timeInFixed = set(new Date(), { hours: getHours(timeIn), minutes: getMinutes(timeIn), seconds: 0, milliseconds: 0 });
-    const timeOutFixed = set(new Date(), { hours: getHours(body.timeOut), minutes: getMinutes(body.timeOut), seconds: 0, milliseconds: 0 });
+    const timeInFixed = set(toZonedTime(new Date(), timeZone), { hours: getHours(timeIn), minutes: getMinutes(timeIn), seconds: 0, milliseconds: 0 });
+    const timeOutFixed = set(toZonedTime(new Date(), timeZone), { hours: getHours(body.timeOut), minutes: getMinutes(body.timeOut), seconds: 0, milliseconds: 0 });
 
     // Calculate total minutes worked
     const totalMinutesWorked = differenceInMinutes(timeOutFixed, timeInFixed);
@@ -199,7 +195,7 @@ async function timeOut(req: Request, res: Response) {
     const totalHoursWorked = totalMinutesAfterLunch / 60;
 
     // Reset the schedule end time to only compare the time (hour and minute)
-    const scheduleEndTime = set(new Date(), {
+    const scheduleEndTime = set(toZonedTime(new Date(), timeZone), {
         hours: getHours(schedule.endTime),
         minutes: getMinutes(schedule.endTime),
         seconds: 0,
@@ -305,21 +301,21 @@ async function lunchIn(req: Request, res: Response) {
     }
 
     // Use date-fns to compare only hours and minutes
-    const lunchStartTime = set(new Date(), {
+    const lunchStartTime = set(toZonedTime(new Date(), timeZone), {
         hours: getHours(schedule.lunchStartTime!),
         minutes: getMinutes(schedule.lunchStartTime!),
         seconds: 0,
         milliseconds: 0,
     });
 
-    const lunchEndTime = set(new Date(), {
+    const lunchEndTime = set(toZonedTime(new Date(), timeZone), {
         hours: getHours(schedule.lunchEndTime!),
         minutes: getMinutes(schedule.lunchEndTime!),
         seconds: 0,
         milliseconds: 0,
     });
 
-    const lunchTimeIn = set(new Date(), {
+    const lunchTimeIn = set(toZonedTime(new Date(), timeZone), {
         hours: getHours(body.lunchTimeIn),
         minutes: getMinutes(body.lunchTimeIn),
         seconds: 0,
@@ -417,16 +413,16 @@ async function lunchOut(req: Request, res: Response) {
         return customThrowError(400, 'Employee schedule not found');
     }
 
-    // Use date-fns to compare only hours and minutes for scheduled lunch out
-    const scheduleLunchEndTime = set(new Date(), {
+    // Use date-fns to compare only hours and minutes for scheduled lunch out in Manila time zone
+    const scheduleLunchEndTime = set(toZonedTime(new Date(), timeZone), {
         hours: getHours(schedule.lunchEndTime!),
         minutes: getMinutes(schedule.lunchEndTime!),
         seconds: 0,
         milliseconds: 0,
     });
 
-    // Use date-fns to compare only hours and minutes for lunch time out
-    const scheduledLunchTimeout = set(new Date(), {
+    // Use date-fns to compare only hours and minutes for lunch time out in Manila time zone
+    const scheduledLunchTimeout = set(toZonedTime(new Date(), timeZone), {
         hours: getHours(body.lunchTimeOut),
         minutes: getMinutes(body.lunchTimeOut),
         seconds: 0,
@@ -439,7 +435,7 @@ async function lunchOut(req: Request, res: Response) {
     }
 
     // Use date-fns to compare only hours and minutes for lunch time in
-    const currentLunchTimeIn = set(new Date(), {
+    const currentLunchTimeIn = set(toZonedTime(new Date(currentAttendance.lunchTimeIn), timeZone), {
         hours: getHours(currentAttendance.lunchTimeIn),
         minutes: getMinutes(currentAttendance.lunchTimeIn),
         seconds: 0,
@@ -489,10 +485,6 @@ async function getAttendanceOfEmployeeToday(req: Request, res: Response) {
             date: formattedDate,
         },
     });
-
-    if (!attendance) {
-        return customThrowError(404, 'Attendance record not found');
-    }
 
     res.status(200).send(attendance);
 }
