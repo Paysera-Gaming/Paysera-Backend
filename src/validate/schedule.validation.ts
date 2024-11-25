@@ -29,14 +29,6 @@ function validateFixedSchedule(schedule: Schedule & { id: number }) {
         allowedOvertime: z.boolean().optional(),
         lunchStartTime: z.date().optional(),
         lunchEndTime: z.date().optional(),
-    }).strict().refine((data) => {
-        if (data.startTime && data.endTime) {
-            return data.startTime < data.endTime;
-        }
-        return true;
-    }, {
-        message: "Invalid time range: start time must be earlier than fixed time",
-        path: ["startTime", "endTime"]
     });
 
     scheduleSchema.parse(schedule);
