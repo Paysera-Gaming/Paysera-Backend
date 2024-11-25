@@ -5,6 +5,7 @@ services:
                         POSTGRES_USER: ${POSTGRES_USER}
                         POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
                         POSTGRES_DB: ${POSTGRES_DB}
+                        TZ: Asia/Manila
                 ports:
                         - "5432:5432"
                 volumes:
@@ -25,6 +26,7 @@ services:
                         JWT_SECRET: ${JWT_SECRET}
                         ORIGIN: ${ORIGIN}
                         SALT_ROUNDS: ${SALT_ROUNDS}
+                        TZ: Asia/Manila
                 depends_on:
                         - db
                 command: sh -c "npx prisma migrate deploy && node ./dist/src/index.js"

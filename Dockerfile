@@ -1,6 +1,12 @@
 # Use Node.js image
 FROM node:18-alpine
 
+# Install tzdata to configure timezone
+RUN apk add --no-cache tzdata
+
+# Set the timezone to Asia/Manila
+ENV TZ=Asia/Manila
+
 # Create and set the working directory
 WORKDIR /app
 
