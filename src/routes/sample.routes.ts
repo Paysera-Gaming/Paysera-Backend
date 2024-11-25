@@ -2,6 +2,8 @@ import { asyncHandler } from '../middlewares/errorHandler';
 import express, { Request, Response } from 'express';
 import os from 'os';
 import { configEnv } from '../config/dotenv';
+import { toZonedTime } from 'date-fns-tz';
+import { parseISO } from 'date-fns';
 
 const sampleRouter = express.Router();
 
@@ -30,10 +32,16 @@ sampleRouter.get('/server', (req: Request, res: Response) => {
 
 
 sampleRouter.get('/', (req: Request, res: Response) => {
+    const timeZone = "Asia/Manila";
+    const currentTime = toZonedTime(new Date(), timeZone)
 
-    const wew = res.getHeader('A');
-
-    res.send(`This is Paysera-Backend! Origin ${configEnv.ORIGIN} ${configEnv.NODE_ENV}`);
+    res.send({
+        message: "Hello World",
+        env: configEnv.NODE_ENV,
+        currentTime: currentTime,
+        date: new Date(),
+        isoDate: parseISO(new Date().toISOString())
+    });
 });
 
 sampleRouter.get('/api', (req: Request, res: Response) => {
