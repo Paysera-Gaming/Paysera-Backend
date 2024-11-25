@@ -38,7 +38,7 @@ sampleRouter.get('/', (req: Request, res: Response) => {
     res.send({
         message: "Hello World",
         env: configEnv.NODE_ENV,
-        currentTime: currentTime,
+        currentTime: currentTime.getHours() + ':' + currentTime.getMinutes() + ':' + currentTime.getSeconds(),
         date: new Date(),
         isoDate: parseISO(new Date().toISOString())
     });
