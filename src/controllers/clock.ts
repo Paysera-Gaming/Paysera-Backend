@@ -59,6 +59,25 @@ async function timeIn(req: Request, res: Response) {
         },
     });
 
+    // Check if the time in exceeds the schedule end time
+    const timeIn = set(toZonedTime(new Date(), timeZone), {
+        hours: getHours(body.timeIn),
+        minutes: getMinutes(body.timeIn),
+        seconds: 0,
+        milliseconds: 0,
+    });
+
+    const scheduledEndTime = set(toZonedTime(new Date(), timeZone), {
+        hours: getHours(schedule.endTime),
+        minutes: getMinutes(schedule.endTime),
+        seconds: 0,
+        milliseconds: 0,
+    });
+
+    if (schedule.scheduleType === 'FIXED' && isAfter(timeIn, scheduledEndTime)) {
+        return customThrowError(400, 'Time in exceeds schedule end time');
+    }
+
     if (currentAttendance) {
         // Update the existing attendance record
         if (currentAttendance.status === 'BREAK') {
@@ -324,10 +343,8 @@ async function lunchIn(req: Request, res: Response) {
 
     // Validate if lunch time in is within the scheduled time
     if (schedule.scheduleType === 'FIXED') {
-        if (getHours(lunchTimeIn) < getHours(lunchStartTime)) {
-            return customThrowError(400, 'Lunch time in is too early');
-        } else if (getHours(lunchTimeIn) > getHours(lunchEndTime)) {
-            return customThrowError(400, 'Lunch time in is too late');
+        if (isBefore(lunchTimeIn, lunchStartTime) || isAfter(lunchTimeIn, lunchEndTime)) {
+            return customThrowError(400, 'Lunch time in is not within the scheduled lunch time');
         }
     }
 
