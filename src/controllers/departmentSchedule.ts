@@ -3,6 +3,8 @@ import { customThrowError } from '../middlewares/errorHandler';
 import { validateCreateRoleSchedule } from '../validate/schedule.validation';
 import { validateUpdateRoleSchedule } from '../validate/scheduleUpdate.validation';
 import { Request, Response } from 'express';
+import { toZonedTime } from 'date-fns-tz';
+import department from './department';
 
 // GET /department-schedule
 async function getAllDepartmentSchedules(req: Request, res: Response) {
@@ -49,19 +51,6 @@ async function getDepartmentScheduleById(req: Request, res: Response) {
 
 // POST /department-schedule
 async function createDepartmentSchedule(req: Request, res: Response) {
-    validateCreateRoleSchedule({
-        role: req.body.role,
-        departmentId: req.body.departmentId,
-        name: req.body.name,
-        scheduleType: req.body.scheduleType,
-        startTime: new Date(req.body.startTime),
-        endTime: new Date(req.body.endTime),
-        limitWorkHoursDay: req.body.limitWorkHoursDay,
-        allowedOvertime: req.body.allowedOvertime,
-        lunchStartTime: new Date(req.body.lunchStartTime),
-        lunchEndTime: new Date(req.body.lunchEndTime),
-    });
-
     const departmentId = Number(req.body.departmentId) || -1;
     const department = await prisma.department.findFirst({
         where: { id: departmentId },
@@ -71,15 +60,34 @@ async function createDepartmentSchedule(req: Request, res: Response) {
         customThrowError(404, "Department not found");
     }
 
+    const timeZone = 'Asia/Manila';
+    const startTime = toZonedTime(req.body.startTime, timeZone);
+    const endTime = toZonedTime(req.body.endTime, timeZone);
+    const lunchStartTime = toZonedTime(req.body.lunchStartTime, timeZone);
+    const lunchEndTime = toZonedTime(req.body.lunchEndTime, timeZone);
+
+    validateCreateRoleSchedule({
+        departmentId: departmentId,
+        role: req.body.role,
+        name: req.body.name,
+        scheduleType: req.body.scheduleType,
+        startTime: startTime,
+        endTime: endTime,
+        limitWorkHoursDay: req.body.limitWorkHoursDay,
+        allowedOvertime: req.body.allowedOvertime,
+        lunchStartTime: lunchStartTime,
+        lunchEndTime: lunchEndTime,
+    })
+
     const schedule = await prisma.schedule.create({
         data: {
             scheduleType: req.body.scheduleType,
-            startTime: req.body.startTime,
-            endTime: req.body.endTime,
+            startTime: startTime,
+            endTime: endTime,
             limitWorkHoursDay: req.body.limitWorkHoursDay,
             allowedOvertime: req.body.allowedOvertime,
-            lunchStartTime: req.body.lunchStartTime,
-            lunchEndTime: req.body.lunchEndTime,
+            lunchStartTime: lunchStartTime,
+            lunchEndTime: lunchEndTime,
         },
     });
 
@@ -97,24 +105,28 @@ async function createDepartmentSchedule(req: Request, res: Response) {
 
 // PUT /department-schedule/:id
 async function updateDepartmentSchedule(req: Request, res: Response) {
-    const body = {
-        role: req.body.role,
-        name: req.body.name,
-        scheduleType: req.body.scheduleType,
-        startTime: new Date(req.body.startTime),
-        endTime: new Date(req.body.endTime),
-        limitWorkHoursDay: req.body.limitWorkHoursDay,
-        allowedOvertime: req.body.allowedOvertime,
-        lunchStartTime: new Date(req.body.lunchStartTime),
-        lunchEndTime: new Date(req.body.lunchEndTime),
-    };
-
-    validateUpdateRoleSchedule(body);
 
     const departmentScheduleId = Number(req.params.id);
     if (!departmentScheduleId) {
         customThrowError(400, "Invalid department schedule ID");
     }
+
+    const timeZone = 'Asia/Manila';
+    const body = {
+        role: req.body.role,
+        name: req.body.name,
+        scheduleType: req.body.scheduleType,
+        startTime: toZonedTime(req.body.startTime, timeZone),
+        endTime: toZonedTime(req.body.endTime, timeZone),
+        limitWorkHoursDay: req.body.limitWorkHoursDay,
+        allowedOvertime: req.body.allowedOvertime,
+        lunchStartTime: toZonedTime(req.body.lunchStartTime, timeZone),
+        lunchEndTime: toZonedTime(req.body.lunchEndTime, timeZone),
+    };
+
+    validateUpdateRoleSchedule(body);
+
+
 
     const deptSchedule = await prisma.departmentSchedule.findUnique({
         where: { id: departmentScheduleId },
