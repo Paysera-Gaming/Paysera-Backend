@@ -256,14 +256,14 @@ export const seedDatabase = async () => {
         await prisma.attendance.create({
             data: {
                 employeeId: employee1.id,
-                date: formatDate(new Date('2024-08-01')),
+                date: formatDate(new Date()),
                 status: 'DONE',
                 scheduleType: 'FLEXI',
-                timeIn: new Date('2024-08-01T10:00:00Z'),
-                timeOut: new Date('2024-08-01T18:00:00Z'),
+                timeIn: new Date(new Date().setHours(10, 0, 0, 0)),
+                timeOut: new Date(new Date().setHours(18, 0, 0, 0)),
                 timeTotal: 8,
-                lunchTimeIn: new Date('2024-08-01T12:00:00Z'),
-                lunchTimeOut: new Date('2024-08-01T13:00:00Z'),
+                lunchTimeIn: new Date(new Date().setHours(12, 0, 0, 0)),
+                lunchTimeOut: new Date(new Date().setHours(13, 0, 0, 0)),
                 lunchTimeTotal: 1,
             },
         });
@@ -271,14 +271,14 @@ export const seedDatabase = async () => {
         await prisma.attendance.create({
             data: {
                 employeeId: employee2.id,
-                date: formatDate(new Date('2024-08-01')),
+                date: formatDate(new Date()),
                 status: 'PAID_LEAVE',
                 scheduleType: 'FIXED',
-                timeIn: new Date('2024-08-01T09:00:00Z'),
-                timeOut: new Date('2024-08-01T17:00:00Z'),
+                timeIn: new Date(new Date().setHours(10, 0, 0, 0)),
+                timeOut: new Date(new Date().setHours(18, 0, 0, 0)),
                 timeTotal: 8,
-                lunchTimeIn: new Date('2024-08-01T12:00:00Z'),
-                lunchTimeOut: new Date('2024-08-01T13:00:00Z'),
+                lunchTimeIn: new Date(new Date().setHours(12, 0, 0, 0)),
+                lunchTimeOut: new Date(new Date().setHours(13, 0, 0, 0)),
                 lunchTimeTotal: 1,
             },
         });
