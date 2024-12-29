@@ -55,6 +55,7 @@ describe('Employee Routes', () => {
 
     describe('PUT employee', () => {
         const employeeUpdateSample = {
+            username: 'SampleUpdate',
             firstName: 'SampleUpdate',
             lastName: 'SampleUpdate',
             middleName: 'SampleUpdate',
