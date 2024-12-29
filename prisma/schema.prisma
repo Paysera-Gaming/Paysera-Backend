@@ -44,10 +44,12 @@ model Schedule {
   endTime   DateTime
 
   // Flexi schedule fields
-  limitWorkHoursDay Float? // Applies to FLEXI only
+  allowedTimeInStart DateTime?
+  allowedTimeInEnd   DateTime?
 
-  // Super Flexi schedule fields
-  allowedOvertime Boolean? @default(false)
+  // Overtime fields
+  limitWorkHoursDay Float? // Applies to FLEXI and SUPER_FLEXI only
+  allowedOvertime   Boolean? @default(false)
 
   lunchStartTime DateTime?
   lunchEndTime   DateTime?
@@ -55,6 +57,7 @@ model Schedule {
 
   // Relationships
   DepartmentSchedule DepartmentSchedule?
+  PersonalSchedule   PersonalSchedule?
 
   updatedAt DateTime @updatedAt
   createdAt DateTime @default(now())
@@ -81,6 +84,20 @@ model DepartmentSchedule {
   @@map("DepartmentSchedule")
 }
 
+model PersonalSchedule {
+  id   Int     @id @default(autoincrement())
+  name String? @default("Special Schedule") @Db.VarChar(100)
+  day  Day[]   @default([SATURDAY])
+
+  // Relationships
+  scheduleId Int      @unique
+  Schedule   Schedule @relation(fields: [scheduleId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  employeeId Int      @unique
+  Employee   Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+  @@map("PersonalSchedule")
+}
+
 model Employee {
   id                  Int         @id @default(autoincrement())
   username            String      @unique
@@ -96,6 +113,9 @@ model Employee {
   departmentId    Int?
   Department      Department? @relation("DepartmentEmployees", fields: [departmentId], references: [id], onDelete: SetNull, onUpdate: Cascade)
   LeadsDepartment Department? @relation("DepartmentLeader")
+
+  scheduleId       Int?
+  PersonalSchedule PersonalSchedule?
 
   createdAt  DateTime     @default(now())
   updatedAt  DateTime     @updatedAt
@@ -119,6 +139,17 @@ model Department {
   createdAt DateTime @default(now())
 
   @@map("Department")
+}
+
+model Holiday {
+  id   Int      @id @default(autoincrement())
+  date DateTime
+  name String
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("Holiday")
 }
 
 enum AccessLevel {
