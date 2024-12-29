@@ -43,6 +43,26 @@ describe('Department Schedule API', () => {
         await request(server).get('/api/department-schedule').expect(200);
     });
 
+    it('should return 400 if start time and end time is not align with lunch ', async () => {
+        const department = await prisma.department.findFirst({ take: 1 });
+
+        return request(server)
+            .post('/api/department-schedule')
+            .send({
+                role: 'Test Role',
+                departmentId: department?.id || 1,
+                name: 'Test Schedule',
+                scheduleType: "FIXED",
+                startTime: new Date('2024-08-01T09:00:00Z'),
+                endTime: new Date('2024-08-01T19:00:00Z'),
+                limitWorkHoursDay: 8,
+                allowedOvertime: false,
+                lunchStartTime: new Date('2024-08-01T22:00:00Z'),
+                lunchEndTime: new Date('2024-08-01T22:10:00Z'),
+            }).expect(400);
+
+    });
+
     it('should update a department schedule', async () => {
         let departmentSchedule = await prisma.departmentSchedule.findFirst({ take: 1 });
         console.log(departmentSchedule, "departmentSchedule", departmentSchedule?.id, "departmentSchedule?.id");
