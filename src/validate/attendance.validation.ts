@@ -13,8 +13,8 @@ function validateAttendance(attendance: Attendance) {
         timeHoursWorked: z.number().optional(),
         overTimeTotal: z.number().optional(),
         timeTotal: z.number().optional(),
-        lunchTimeIn: z.date(),
-        lunchTimeOut: z.date().optional(),
+        // lunchTimeIn: z.date(),
+        // lunchTimeOut: z.date().optional(),
         lunchTimeTotal: z.number().optional(),
         createdAt: z.date().optional(),
         updatedAt: z.date().optional(),
@@ -34,8 +34,8 @@ function validateCreateAttendance(attendance: any) {
         timeHoursWorked: z.number().optional(),
         overTimeTotal: z.number().optional(),
         timeTotal: z.number().optional(),
-        lunchTimeIn: z.date().optional(),
-        lunchTimeOut: z.date().optional(),
+        // lunchTimeIn: z.date().optional(),
+        // lunchTimeOut: z.date().optional(),
         lunchTimeTotal: z.number().optional(),
         createdAt: z.date().optional(),
         updatedAt: z.date().optional(),
@@ -43,9 +43,9 @@ function validateCreateAttendance(attendance: any) {
         if (data.timeOut && data.timeIn > data.timeOut) {
             return false;
         }
-        if (data.lunchTimeOut && data.lunchTimeIn && data.lunchTimeIn > data.lunchTimeOut) {
-            return false;
-        }
+        // if (data.lunchTimeOut && data.lunchTimeIn && data.lunchTimeIn > data.lunchTimeOut) {
+        //     return false;
+        // }
         return true;
     }, {
         message: "Invalid time: Ensure timeIn is before timeOut and lunchTimeIn is before lunchTimeOut.",
@@ -66,8 +66,8 @@ function validateUpdateAttendance(attendance: any) {
         timeHoursWorked: z.number().optional(),
         overTimeTotal: z.number().optional(),
         timeTotal: z.number().optional(),
-        lunchTimeIn: z.date(),
-        lunchTimeOut: z.date().optional(),
+        // lunchTimeIn: z.date(),
+        // lunchTimeOut: z.date().optional(),
         lunchTimeTotal: z.number().optional(),
         createdAt: z.date().optional(),
         updatedAt: z.date().optional(),
@@ -75,9 +75,9 @@ function validateUpdateAttendance(attendance: any) {
         if (data.timeOut && data.timeIn > data.timeOut) {
             return false;
         }
-        if (data.lunchTimeOut && data.lunchTimeIn && data.lunchTimeIn > data.lunchTimeOut) {
-            return false;
-        }
+        // if (data.lunchTimeOut && data.lunchTimeIn && data.lunchTimeIn > data.lunchTimeOut) {
+        //     return false;
+        // }
         return true;
     }, {
         message: "Invalid time: Ensure timeIn is before timeOut and lunchTimeIn is before lunchTimeOut.",
