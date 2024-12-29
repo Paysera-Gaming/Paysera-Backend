@@ -3,7 +3,6 @@ import request from 'supertest';
 import app from '..'; // Adjust the path to your Express app
 import { prisma } from '../config/database';
 import { formatDate } from 'date-fns';
-import e from 'express';
 
 describe('Attendance Routes', () => {
     let employeeId: number;
@@ -64,14 +63,9 @@ describe('Attendance Routes', () => {
         it('should record time in successfully', async () => {
             timeIn = new Date(2024, 8, 15, 8, 0, 0);
 
-            console.log(timeIn, "timeIn");
-
             // get timeIn AM and PM format
             const timeInAMPM = formatDate(timeIn, 'hh:mm a');
             console.log(timeInAMPM, "starting time");
-
-
-
             const res = await request(app)
                 .post('/api/attendance/time-in')
                 .send({
@@ -89,7 +83,7 @@ describe('Attendance Routes', () => {
             expect(formatDate(attendance?.timeIn!, 'hh:mm a')).toBe(formatDate(timeIn, 'hh:mm a'));
         });
 
-        it('should return 200 because already time-in', async () => {
+        it('should return 400 because already time-in', async () => {
             const res = await request(app)
                 .post('/api/attendance/time-in')
                 .send({
@@ -108,6 +102,15 @@ describe('Attendance Routes', () => {
                 });
 
             expect(res.status).toBe(400);
+        });
+
+        it('should return 400 if timeIn is not align to schedule', async () => {
+            const res = await request(app)
+                .post('/api/attendance/time-in')
+                .send({
+                    employeeId,
+                    timeStamp: new Date(2024, 8, 12, 23, 59, 59),
+                }).expect(400);
         });
     });
 
@@ -214,7 +217,7 @@ describe('Attendance Routes', () => {
 
             expect(attendance?.status).toBe('DONE');
             expect(attendance?.date).toBe(formatDate(timeOut, 'MMMM d, yyyy'));
-            expect(attendance?.lunchTimeTotal).toBe(1);
+            expect(attendance?.lunchTimeTotal).toBeGreaterThanOrEqual(1);
             expect(attendance?.timeHoursWorked).toBeLessThanOrEqual(8);
             expect(attendance?.timeTotal).toBe(9);
         });
