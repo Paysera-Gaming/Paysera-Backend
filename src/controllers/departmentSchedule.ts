@@ -134,8 +134,6 @@ async function updateDepartmentSchedule(req: Request, res: Response) {
 
     validateUpdateRoleSchedule(body);
 
-
-
     const deptSchedule = await prisma.departmentSchedule.findUnique({
         where: { id: departmentScheduleId },
     });
@@ -150,6 +148,20 @@ async function updateDepartmentSchedule(req: Request, res: Response) {
 
     if (!schedule) {
         return customThrowError(404, "Schedule not found");
+    }
+
+    const startTime = toZonedTime(req.body.startTime, timeZone);
+    const endTime = toZonedTime(req.body.endTime, timeZone);
+    const lunchStartTime = toZonedTime(req.body.lunchStartTime, timeZone);
+    const lunchEndTime = toZonedTime(req.body.lunchEndTime, timeZone);
+
+    // validate schedule
+    if (startTime >= endTime) {
+        customThrowError(400, "Start time must be before end time");
+    } else if (lunchStartTime <= startTime || lunchStartTime >= endTime) {
+        customThrowError(400, "Lunch start time must be between start time and end time");
+    } else if (lunchEndTime <= lunchStartTime || lunchEndTime >= endTime) {
+        customThrowError(400, "Lunch end time must be between lunch start time and end time");
     }
 
     await prisma.departmentSchedule.update({
