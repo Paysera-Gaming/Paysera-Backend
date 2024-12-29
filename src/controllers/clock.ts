@@ -35,7 +35,7 @@ async function timeIn(req: Request, res: Response) {
     }
 
     // Retrieve the employee's schedule based on role and department
-    const employeeSchedule = await prisma.departmentSchedule.findFirst({
+    const currentEmployeeDepartmentSchedule = await prisma.departmentSchedule.findFirst({
         where: {
             role: employeeExists.role,
             departmentId: employeeExists.departmentId,
@@ -45,11 +45,17 @@ async function timeIn(req: Request, res: Response) {
         },
     });
 
-    if (!employeeSchedule || !employeeSchedule.Schedule) {
+    if (!currentEmployeeDepartmentSchedule || !currentEmployeeDepartmentSchedule.Schedule) {
         return customThrowError(400, 'Schedule not found');
     }
 
-    const schedule = employeeSchedule.Schedule;
+    const depthSchedule = currentEmployeeDepartmentSchedule.Schedule;
+
+    // if weekend don't allow time in in depth schedule
+    const currentDay = format(body.timeIn, 'EEEE');
+    if (currentDay === 'Saturday' || currentDay === 'Sunday') {
+        return customThrowError(400, 'Weekend not allowed to time in');
+    }
 
     // Check if the employee has already clocked in today
     const currentAttendance = await prisma.attendance.findFirst({
@@ -68,13 +74,13 @@ async function timeIn(req: Request, res: Response) {
     });
 
     const scheduledEndTime = set(toZonedTime(new Date(), timeZone), {
-        hours: getHours(schedule.endTime),
-        minutes: getMinutes(schedule.endTime),
+        hours: getHours(depthSchedule.endTime),
+        minutes: getMinutes(depthSchedule.endTime),
         seconds: 0,
         milliseconds: 0,
     });
 
-    if (schedule.scheduleType === 'FIXED' && isAfter(timeIn, scheduledEndTime)) {
+    if (depthSchedule.scheduleType === 'FIXED' && isAfter(timeIn, scheduledEndTime)) {
         return customThrowError(400, 'Time in exceeds schedule end time');
     }
 
@@ -99,14 +105,14 @@ async function timeIn(req: Request, res: Response) {
 
         // Schedule start time with only hour and minute in Manila time
         const scheduledStartTime = set(toZonedTime(new Date(), timeZone), {
-            hours: getHours(schedule.startTime),
-            minutes: getMinutes(schedule.startTime),
+            hours: getHours(depthSchedule.startTime),
+            minutes: getMinutes(depthSchedule.startTime),
             seconds: 0,
             milliseconds: 0,
         });
 
         // Compare only time (ignoring the exact date)
-        if (schedule.scheduleType === 'FIXED' && isBefore(body.timeIn, scheduledStartTime)) {
+        if (depthSchedule.scheduleType === 'FIXED' && isBefore(body.timeIn, scheduledStartTime)) {
             effectiveTimeIn = scheduledStartTime;
         }
 
@@ -116,7 +122,7 @@ async function timeIn(req: Request, res: Response) {
                 employeeId: body.employeeId,
                 date: format(body.timeIn, 'MMMM d, yyyy'), // Format date for the record
                 status: 'ONGOING',
-                scheduleType: schedule.scheduleType,
+                scheduleType: depthSchedule.scheduleType,
                 timeIn: effectiveTimeIn,
             },
         });
@@ -221,7 +227,21 @@ async function timeOut(req: Request, res: Response) {
         milliseconds: 0,
     });
 
+    const scheduledStartTime = set(toZonedTime(new Date(), timeZone), {
+        hours: getHours(schedule.startTime),
+        minutes: getMinutes(schedule.startTime),
+        seconds: 0,
+        milliseconds: 0,
+    });
+
     let overtimeTotal = 0;
+
+    // validate if time out is earlier than the scheduled start time
+    if (schedule.scheduleType === 'FIXED') {
+        if (isBefore(timeOutFixed, scheduledStartTime)) {
+            return customThrowError(400, 'Time out is earlier than the scheduled start time');
+        }
+    }
 
     // Fixed schedule: Adjust total hours and prevent overtime if not allowed
     if (schedule.scheduleType === 'FIXED') {
