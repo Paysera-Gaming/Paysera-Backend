@@ -3,7 +3,7 @@ import { NextFunction, Request, Response } from 'express';
 import pino from 'pino';
 import pinoHttp from 'pino-http';
 
-const isDevelopment = configEnv.NODE_ENV === 'development';
+const isDevelopment = configEnv.NODE_ENV === 'development' || configEnv.NODE_ENV === 'test';
 
 const logger = pino({
     level: isDevelopment ? 'debug' : 'info',

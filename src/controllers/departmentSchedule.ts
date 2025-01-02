@@ -2,7 +2,7 @@ import { prisma } from '../config/database';
 import { customThrowError } from '../middlewares/errorHandler';
 import { validateCreateRoleSchedule } from '../validate/schedule.validation';
 import { validateUpdateRoleSchedule } from '../validate/scheduleUpdate.validation';
-import e, { Request, Response } from 'express';
+import { Request, Response } from 'express';
 import { toZonedTime } from 'date-fns-tz';
 
 // GET /department-schedule
