@@ -86,7 +86,7 @@ model DepartmentSchedule {
 
 model PersonalSchedule {
   id   Int     @id @default(autoincrement())
-  name String? @default("Special Schedule") @Db.VarChar(100)
+  name String? @default("Personal Schedule") @Db.VarChar(100)
   day  Day[]   @default([SATURDAY])
 
   // Relationships
