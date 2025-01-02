@@ -1,18 +1,19 @@
-import { differenceInMinutes, format, getHours, getMinutes, isAfter, isBefore, parseISO, set } from 'date-fns';
+import { differenceInMinutes, format, getHours, getMinutes, isAfter, isBefore, isWithinInterval, parseISO, set } from 'date-fns';
 import { Request, Response } from 'express';
 import { prisma } from '../config/database';
 import { customThrowError } from '../middlewares/errorHandler';
 import { toZonedTime } from 'date-fns-tz';
+import { initializeDateTimeZone } from '../utils/date';
+
+const timeZone = 'Asia/Manila';
 
 
 // POST /api / attendance / time -in
 async function timeIn(req: Request, res: Response) {
-
     if (!req.body.employeeId || !req.body.timeStamp) {
         return customThrowError(400, 'Employee ID and time in are required');
     }
 
-    const timeZone = 'Asia/Manila';
     const body = {
         employeeId: Number(req.body.employeeId),
         timeIn: toZonedTime(parseISO(req.body.timeStamp), timeZone),
@@ -24,36 +25,45 @@ async function timeIn(req: Request, res: Response) {
     }
 
     // Check if the employee exists
-    const employeeExists = await prisma.employee.findUnique({
+    const currentEmployee = await prisma.employee.findUnique({
         where: { id: body.employeeId },
+        include: {
+            PersonalSchedule: {
+                include: {
+                    Schedule: true,
+                },
+            },
+        },
     });
 
-    if (!employeeExists) {
+    if (!currentEmployee) {
         return customThrowError(404, 'Employee not found');
-    } else if (!employeeExists.role || !employeeExists.departmentId) {
+    } else if (!currentEmployee.role || !currentEmployee.departmentId) {
         return customThrowError(400, 'Employee is not assigned to a department');
     }
 
     // Retrieve the employee's schedule based on role and department
-    const currentEmployeeDepartmentSchedule = await prisma.departmentSchedule.findFirst({
+    const currentDepartmentSchedule = await prisma.departmentSchedule.findFirst({
         where: {
-            role: employeeExists.role,
-            departmentId: employeeExists.departmentId,
+            role: currentEmployee.role,
+            departmentId: currentEmployee.departmentId,
         },
         select: {
             Schedule: true,
         },
     });
 
-    if (!currentEmployeeDepartmentSchedule || !currentEmployeeDepartmentSchedule.Schedule) {
-        return customThrowError(400, 'Schedule not found');
+    // Get the schedule of the employee checking if it is a department schedule or personal schedule
+    const currentSchedule = currentEmployee.PersonalSchedule?.Schedule || currentDepartmentSchedule?.Schedule;
+    const isDepartmentSchedule = !currentEmployee.PersonalSchedule?.Schedule && currentDepartmentSchedule?.Schedule;
+
+    if (!currentSchedule) {
+        return customThrowError(400, 'Employee schedule not found');
     }
 
-    const depthSchedule = currentEmployeeDepartmentSchedule.Schedule;
-
-    // if weekend don't allow time in in depth schedule
+    // if weekend don't allow time in in department schedule
     const currentDay = format(body.timeIn, 'EEEE');
-    if (currentDay === 'Saturday' || currentDay === 'Sunday') {
+    if (isDepartmentSchedule && (currentDay === 'Saturday' || currentDay === 'Sunday')) {
         return customThrowError(400, 'Weekend not allowed to time in');
     }
 
@@ -65,54 +75,61 @@ async function timeIn(req: Request, res: Response) {
         },
     });
 
+    // Check if the employee has already clocked in today
+    if (currentAttendance) {
+        return customThrowError(400, 'Already clocked in');
+    }
+
+    const timeIn = initializeDateTimeZone(body.timeIn, "Asia/Manila");
+    const scheduledEndTime = initializeDateTimeZone(currentSchedule.endTime, "Asia/Manila");
+
     // Check if the time in exceeds the schedule end time
-    const timeIn = set(toZonedTime(new Date(), timeZone), {
-        hours: getHours(body.timeIn),
-        minutes: getMinutes(body.timeIn),
-        seconds: 0,
-        milliseconds: 0,
-    });
+    if (currentSchedule.scheduleType === 'FIXED' && isAfter(timeIn, scheduledEndTime)) {
+        return customThrowError(400, 'Time in exceeds the schedule end time');
+    }
 
-    const scheduledEndTime = set(toZonedTime(new Date(), timeZone), {
-        hours: getHours(depthSchedule.endTime),
-        minutes: getMinutes(depthSchedule.endTime),
-        seconds: 0,
-        milliseconds: 0,
-    });
+    // Check if department schedule is flexible and time in is within the allowed time in range
+    if (currentSchedule.scheduleType === 'FLEXI') {
+        // Default allowed time in range is 6:00 AM to 10:00 AM
+        const startAllowed = currentSchedule.allowedTimeInStart
+            ? initializeDateTimeZone(currentSchedule.allowedTimeInStart, timeZone)
+            : initializeDateTimeZone(parseISO('1970-01-01T06:00:00'), timeZone);
 
-    if (depthSchedule.scheduleType === 'FIXED' && isAfter(timeIn, scheduledEndTime)) {
-        return customThrowError(400, 'Time in exceeds schedule end time');
+        const endAllowed = currentSchedule.allowedTimeInEnd
+            ? initializeDateTimeZone(currentSchedule.allowedTimeInEnd, timeZone)
+            : initializeDateTimeZone(parseISO('1970-01-01T10:00:00'), timeZone);
+
+        // Check if time in is within the allowed time in range
+        if (!isWithinInterval(timeIn, { start: startAllowed, end: endAllowed })) {
+            return customThrowError(400, 'Time in is not within the allowed time in range');
+        }
     }
 
     if (currentAttendance) {
-        // Update the existing attendance record
-        if (currentAttendance.status === 'BREAK') {
-            return customThrowError(400, 'Time currently on break');
-        }
+        // Update the existing attendance record if it is still ongoing
+        // if (currentAttendance.status === 'BREAK') {
+        //     return customThrowError(400, 'Time currently on break');
+        // }
 
-        await prisma.attendance.update({
-            where: { id: currentAttendance.id },
-            data: {
-                status: 'ONGOING',
-                timeOut: null,
-                timeHoursWorked: 0,
-                overTimeTotal: 0,
-                timeTotal: 0,
-            },
-        });
+        // await prisma.attendance.update({
+        //     where: { id: currentAttendance.id },
+        //     data: {
+        //         status: 'ONGOING',
+        //         timeOut: null,
+        //         timeHoursWorked: 0,
+        //         overTimeTotal: 0,
+        //         timeTotal: 0,
+        //     },
+        // });
+
+        return customThrowError(400, 'Already clocked in');
     } else {
-        let effectiveTimeIn = body.timeIn;
+        let effectiveTimeIn = timeIn;
 
-        // Schedule start time with only hour and minute in Manila time
-        const scheduledStartTime = set(toZonedTime(new Date(), timeZone), {
-            hours: getHours(depthSchedule.startTime),
-            minutes: getMinutes(depthSchedule.startTime),
-            seconds: 0,
-            milliseconds: 0,
-        });
+        const scheduledStartTime = initializeDateTimeZone(currentSchedule.startTime, timeZone);
 
-        // Compare only time (ignoring the exact date)
-        if (depthSchedule.scheduleType === 'FIXED' && isBefore(body.timeIn, scheduledStartTime)) {
+        // If the schedule is fixed and the time in is earlier than the scheduled start time, use the scheduled start time
+        if (currentSchedule.scheduleType === 'FIXED' && isBefore(timeIn, scheduledStartTime)) {
             effectiveTimeIn = scheduledStartTime;
         }
 
@@ -120,21 +137,21 @@ async function timeIn(req: Request, res: Response) {
         await prisma.attendance.create({
             data: {
                 employeeId: body.employeeId,
-                date: format(body.timeIn, 'MMMM d, yyyy'), // Format date for the record
+                date: format(timeIn, 'MMMM d, yyyy'), // Format date for the record
                 status: 'ONGOING',
-                scheduleType: depthSchedule.scheduleType,
+                scheduleType: currentSchedule.scheduleType,
                 timeIn: effectiveTimeIn,
             },
         });
+
+        // Update the employee's active status
+        await prisma.employee.update({
+            where: { id: body.employeeId },
+            data: { isActive: true },
+        });
+
+        return res.status(200).send('Attendance record successfully created');
     }
-
-    // Update the employee's active status
-    await prisma.employee.update({
-        where: { id: body.employeeId },
-        data: { isActive: true },
-    });
-
-    res.status(200).send("Attendance record successfully created");
 }
 
 // POST /api/attendance/time-out
@@ -143,7 +160,6 @@ async function timeOut(req: Request, res: Response) {
         return customThrowError(400, 'Employee ID and time in are required');
     }
 
-    const timeZone = 'Asia/Manila';
     const body = {
         employeeId: Number(req.body.employeeId),
         timeOut: toZonedTime(parseISO(req.body.timeStamp), timeZone),
@@ -159,36 +175,53 @@ async function timeOut(req: Request, res: Response) {
     }
 
     // Check if employee exists
-    const employee = await prisma.employee.findUnique({
+    const currentEmployee = await prisma.employee.findUnique({
         where: { id: body.employeeId },
+        include: {
+            PersonalSchedule: {
+                include: {
+                    Schedule: true,
+                },
+            },
+        },
     });
 
-    if (!employee) {
+    if (!currentEmployee) {
         return customThrowError(404, 'Employee not found');
-    } else if (!employee.role || !employee.departmentId) {
+    } else if (!currentEmployee.role || !currentEmployee.departmentId) {
         return customThrowError(400, 'Employee is not assigned to a department');
     }
 
     // Get employee's schedule
-    const employeeSchedule = await prisma.departmentSchedule.findFirst({
+    const currentDepartmentSchedule = await prisma.departmentSchedule.findFirst({
         where: {
-            role: employee.role,
-            departmentId: employee.departmentId,
+            role: currentEmployee.role,
+            departmentId: currentEmployee.departmentId,
         },
         select: { Schedule: true },
     });
 
-    const schedule = employeeSchedule?.Schedule;
+    const timeOut = initializeDateTimeZone(body.timeOut, timeZone);
+
+    // Get the schedule of the employee checking if it is a department schedule or personal schedule
+    const schedule = currentEmployee.PersonalSchedule?.Schedule || currentDepartmentSchedule?.Schedule;
+    const isDepartmentSchedule = !currentEmployee.PersonalSchedule?.Schedule && currentDepartmentSchedule?.Schedule;
 
     if (!schedule) {
         return customThrowError(400, 'Employee schedule not found');
+    }
+
+    // if weekend don't allow time in in department schedule
+    const currentDay = format(timeOut, 'EEEE');
+    if (isDepartmentSchedule && (currentDay === 'Saturday' || currentDay === 'Sunday')) {
+        return customThrowError(400, 'Weekend not allowed to time out');
     }
 
     // Fetch current attendance record
     const currentAttendance = await prisma.attendance.findFirst({
         where: {
             employeeId: body.employeeId,
-            date: format(body.timeOut, 'MMMM d, yyyy'),
+            date: format(timeOut, 'MMMM d, yyyy'),
         },
     });
 
@@ -202,38 +235,29 @@ async function timeOut(req: Request, res: Response) {
         return customThrowError(400, 'Time currently on break');
     }
 
-    const timeIn = toZonedTime(new Date(currentAttendance.timeIn), 'Asia/Manila');
+    const timeIn = initializeDateTimeZone(currentAttendance.timeIn, timeZone);
 
     // Use only time components for calculations
-    const timeInFixed = set(toZonedTime(new Date(), timeZone), { hours: getHours(timeIn), minutes: getMinutes(timeIn), seconds: 0, milliseconds: 0 });
-    const timeOutFixed = set(toZonedTime(new Date(), timeZone), { hours: getHours(body.timeOut), minutes: getMinutes(body.timeOut), seconds: 0, milliseconds: 0 });
-
+    const timeInFixed = initializeDateTimeZone(timeIn, timeZone);
+    const timeOutFixed = initializeDateTimeZone(body.timeOut, timeZone);
+    // TODO: Calculate total hours worked
     // Calculate total minutes worked
-    const totalMinutesWorked = differenceInMinutes(timeOutFixed, timeInFixed);
+    const minutesWorkedTotal = differenceInMinutes(timeOutFixed, timeInFixed);
 
     // Subtract lunch time from total working hours
-    let totalMinutesAfterLunch = totalMinutesWorked;
-    if (currentAttendance.lunchTimeTotal) {
-        totalMinutesAfterLunch -= currentAttendance.lunchTimeTotal * 60; // Convert lunchTimeTotal to minutes
+    let totalMinutesAfterLunch = minutesWorkedTotal;
+    if (totalMinutesAfterLunch > 60) {
+        totalMinutesAfterLunch -= 60;
+    } else {
+        // ? Discuss with the team if this is need to be implemented
+        // return customThrowError(400, 'Total hours worked must be greater than 1 hour');
     }
 
     const totalHoursWorked = totalMinutesAfterLunch / 60;
 
     // Reset the schedule end time to only compare the time (hour and minute)
-    const scheduleEndTime = set(toZonedTime(new Date(), timeZone), {
-        hours: getHours(schedule.endTime),
-        minutes: getMinutes(schedule.endTime),
-        seconds: 0,
-        milliseconds: 0,
-    });
-
-    const scheduledStartTime = set(toZonedTime(new Date(), timeZone), {
-        hours: getHours(schedule.startTime),
-        minutes: getMinutes(schedule.startTime),
-        seconds: 0,
-        milliseconds: 0,
-    });
-
+    const scheduledStartTime = initializeDateTimeZone(schedule.startTime, timeZone);
+    const scheduleEndTime = initializeDateTimeZone(schedule.endTime, timeZone);
     let overtimeTotal = 0;
 
     // validate if time out is earlier than the scheduled start time
@@ -262,7 +286,7 @@ async function timeOut(req: Request, res: Response) {
             timeOut: body.timeOut,
             timeHoursWorked: totalHoursWorked,  // Regular hours worked
             overTimeTotal: overtimeTotal,       // Overtime worked (if any)
-            timeTotal: totalMinutesWorked / 60,      // Total time worked before lunch deduction
+            timeTotal: minutesWorkedTotal / 60,      // Total time worked before lunch deduction
             status: 'DONE',
         },
     });
@@ -273,7 +297,13 @@ async function timeOut(req: Request, res: Response) {
         data: { isActive: false },
     });
 
-    res.status(200).send('Attendance updated');
+    res.status(200).send({
+        timeOut: body.timeOut,
+        timeHoursWorked: totalHoursWorked,  // Regular hours worked
+        overTimeTotal: overtimeTotal,       // Overtime worked (if any)
+        timeTotal: minutesWorkedTotal / 60,      // Total time worked before lunch deduction
+        status: 'DONE',
+    });
 }
 
 // POST /api/attendance/lunch-in
