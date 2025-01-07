@@ -44,8 +44,7 @@ model Schedule {
   endTime   DateTime
 
   // Flexi schedule fields
-  allowedTimeInStart DateTime?
-  allowedTimeInEnd   DateTime?
+  startTimeLimit DateTime?
 
   // Overtime fields
   limitWorkHoursDay Float? // Applies to FLEXI and SUPER_FLEXI only
@@ -110,11 +109,9 @@ model Employee {
   role                String?     @default("EMPLOYEE") @Db.VarChar(50) // Use this to denote job function like "PROGRAMMER", "DESIGNER"
 
   // Relations 
-  departmentId    Int?
-  Department      Department? @relation("DepartmentEmployees", fields: [departmentId], references: [id], onDelete: SetNull, onUpdate: Cascade)
-  LeadsDepartment Department? @relation("DepartmentLeader")
-
-  scheduleId       Int?
+  departmentId     Int?
+  Department       Department?       @relation("DepartmentEmployees", fields: [departmentId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  LeadsDepartment  Department?       @relation("DepartmentLeader")
   PersonalSchedule PersonalSchedule?
 
   createdAt  DateTime     @default(now())
@@ -127,13 +124,13 @@ model Employee {
 }
 
 model Department {
-  id                 Int                  @id @default(autoincrement())
-  name               String               @Db.VarChar(100)
-  // Relations
-  leaderId           Int?                 @unique
-  Leader             Employee?            @relation("DepartmentLeader", fields: [leaderId], references: [id], onDelete: SetNull, onUpdate: Cascade)
-  DepartmentSchedule DepartmentSchedule[]
-  Employees          Employee[]           @relation("DepartmentEmployees")
+  id                     Int                     @id @default(autoincrement())
+  name                   String                  @Db.VarChar(100)
+  leaderId               Int?                    @unique
+  Leader                 Employee?               @relation("DepartmentLeader", fields: [leaderId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  DepartmentSchedule     DepartmentSchedule[]
+  Employees              Employee[]              @relation("DepartmentEmployees")
+  departmentAnnouncement DepartmentAnnouncement?
 
   updatedAt DateTime @updatedAt
   createdAt DateTime @default(now())
@@ -150,6 +147,29 @@ model Holiday {
   updatedAt DateTime @updatedAt
 
   @@map("Holiday")
+}
+
+model Announcement {
+  id        Int      @id @default(autoincrement())
+  title     String
+  body      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("Announcement")
+}
+
+model DepartmentAnnouncement {
+  id           Int        @id @default(autoincrement())
+  title        String
+  body         String
+  departmentId Int        @unique
+  Department   Department @relation(fields: [departmentId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("DepartmentAnnouncement")
 }
 
 enum AccessLevel {
