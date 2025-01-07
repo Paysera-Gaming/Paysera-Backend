@@ -91,12 +91,12 @@ async function timeIn(req: Request, res: Response) {
     // Check if department schedule is flexible and time in is within the allowed time in range
     if (currentSchedule.scheduleType === 'FLEXI') {
         // Default allowed time in range is 6:00 AM to 10:00 AM
-        const startAllowed = currentSchedule.allowedTimeInStart
-            ? initializeDateTimeZone(currentSchedule.allowedTimeInStart, timeZone)
+        const startAllowed = currentSchedule.startTime
+            ? initializeDateTimeZone(currentSchedule.startTime, timeZone)
             : initializeDateTimeZone(parseISO('1970-01-01T06:00:00'), timeZone);
 
-        const endAllowed = currentSchedule.allowedTimeInEnd
-            ? initializeDateTimeZone(currentSchedule.allowedTimeInEnd, timeZone)
+        const endAllowed = currentSchedule.startTimeLimit
+            ? initializeDateTimeZone(currentSchedule.startTimeLimit, timeZone)
             : initializeDateTimeZone(parseISO('1970-01-01T10:00:00'), timeZone);
 
         // Check if time in is within the allowed time in range
