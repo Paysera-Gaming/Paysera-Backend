@@ -26,8 +26,8 @@ function validateFixedSchedule(schedule: Schedule & { id: number }) {
         endTime: z.date().optional(),
         limitWorkHoursDay: z.number().optional(),
         allowedOvertime: z.boolean().optional(),
-        lunchStartTime: z.date().optional(),
-        lunchEndTime: z.date().optional(),
+        // lunchStartTime: z.date().optional(),
+        // lunchEndTime: z.date().optional(),
     }).strict().refine((data) => {
         if (data.startTime && data.endTime) {
             return data.startTime < data.endTime;
@@ -49,8 +49,8 @@ function validateSuperFlexiSchedule(schedule: Schedule & { id: number }) {
         endTime: z.date(),
         limitWorkHoursDay: z.number().optional(),
         allowedOvertime: z.boolean().optional(),
-        lunchStartTime: z.date().optional(),
-        lunchEndTime: z.date().optional(),
+        // lunchStartTime: z.date().optional(),
+        // lunchEndTime: z.date().optional(),
     }).strict().refine((data) => {
         if (data.startTime && data.endTime) {
             return data.startTime < data.endTime;
@@ -72,8 +72,8 @@ function validateFlexiSchedule(schedule: Schedule & { id: number }) {
         endTime: z.date(),
         limitWorkHoursDay: z.number().optional(),
         allowedOvertime: z.boolean().optional(),
-        lunchStartTime: z.date().optional(),
-        lunchEndTime: z.date().optional(),
+        // lunchStartTime: z.date().optional(),
+        // lunchEndTime: z.date().optional(),
     }).strict().refine((data) => {
         if (data.startTime && data.endTime) {
             return data.startTime < data.endTime;
@@ -100,4 +100,13 @@ function validateUpdateRoleSchedule(schedule: any) {
     validateUpdateSchedule(scheduleProps);
 }
 
-export { validateUpdateRoleSchedule };
+function validateUpdatePersonalSchedule(schedule: any) {
+    const scheduleSchema = z.object({
+        employeeId: z.number(),
+    });
+
+    scheduleSchema.parse(schedule);
+    validateUpdateSchedule(schedule);
+}
+
+export { validateUpdateRoleSchedule, validateUpdatePersonalSchedule };

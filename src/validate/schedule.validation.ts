@@ -27,8 +27,8 @@ function validateFixedSchedule(schedule: Schedule & { id: number }) {
         endTime: z.date(),
         limitWorkHoursDay: z.number().optional(),
         allowedOvertime: z.boolean().optional(),
-        lunchStartTime: z.date().optional(),
-        lunchEndTime: z.date().optional(),
+        // lunchStartTime: z.date().optional(),
+        // lunchEndTime: z.date().optional(),
     });
 
     scheduleSchema.parse(schedule);
@@ -42,8 +42,8 @@ function validateSuperFlexiSchedule(schedule: Schedule & { id: number }) {
         endTime: z.date(),
         limitWorkHoursDay: z.number().optional(),
         allowedOvertime: z.boolean().optional(),
-        lunchStartTime: z.date().optional(),
-        lunchEndTime: z.date().optional(),
+        // lunchStartTime: z.date().optional(),
+        // lunchEndTime: z.date().optional(),
     }).strict().refine((data) => {
         if (data.startTime && data.endTime) {
             return data.startTime < data.endTime;
@@ -62,11 +62,12 @@ function validateFlexiSchedule(schedule: Schedule & { id: number }) {
         name: z.string().max(50).optional(),
         scheduleType: z.enum(["FLEXI"]),
         startTime: z.date(),
+        startTimeLimit: z.date(),
         endTime: z.date(),
         limitWorkHoursDay: z.number().optional(),
         allowedOvertime: z.boolean().optional(),
-        lunchStartTime: z.date().optional(),
-        lunchEndTime: z.date().optional(),
+        // lunchStartTime: z.date().optional(),
+        // lunchEndTime: z.date().optional(),
     }).strict().refine((data) => {
         if (data.startTime && data.endTime) {
             return data.startTime < data.endTime;
@@ -93,13 +94,13 @@ function validateCreateRoleSchedule(schedule: any) {
     validateCreateSchedule(scheduleProps);
 }
 
-function validateCreateSoloSchedule(schedule: any) {
+function validateCreatePersonalSchedule(schedule: any) {
     const scheduleSchema = z.object({
-        username: z.string(),
+        employeeId: z.number(),
     });
 
     scheduleSchema.parse(schedule);
     validateCreateSchedule(schedule);
 }
 
-export { validateCreateRoleSchedule };
+export { validateCreateRoleSchedule, validateCreatePersonalSchedule };
