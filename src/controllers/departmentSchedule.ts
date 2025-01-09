@@ -61,8 +61,8 @@ async function createDepartmentSchedule(req: Request, res: Response) {
     const timeZone = 'Asia/Manila';
     const startTime = toZonedTime(req.body.startTime, timeZone);
     const endTime = toZonedTime(req.body.endTime, timeZone);
-    const lunchStartTime = toZonedTime(req.body.lunchStartTime, timeZone);
-    const lunchEndTime = toZonedTime(req.body.lunchEndTime, timeZone);
+    // const lunchStartTime = toZonedTime(req.body.lunchStartTime, timeZone);
+    // const lunchEndTime = toZonedTime(req.body.lunchEndTime, timeZone);
 
     validateCreateRoleSchedule({
         departmentId: departmentId,
@@ -73,19 +73,20 @@ async function createDepartmentSchedule(req: Request, res: Response) {
         endTime: endTime,
         limitWorkHoursDay: req.body.limitWorkHoursDay,
         allowedOvertime: req.body.allowedOvertime,
-        lunchStartTime: lunchStartTime,
-        lunchEndTime: lunchEndTime,
+        // lunchStartTime: lunchStartTime,
+        // lunchEndTime: lunchEndTime,
     })
 
 
     // validate schedule
     if (startTime >= endTime) {
         customThrowError(400, "Start time must be before end time");
-    } else if (lunchStartTime <= startTime || lunchStartTime >= endTime) {
-        customThrowError(400, "Lunch start time must be between start time and end time");
-    } else if (lunchEndTime <= lunchStartTime || lunchEndTime >= endTime) {
-        customThrowError(400, "Lunch end time must be between lunch start time and end time");
     }
+    //  else if (lunchStartTime <= startTime || lunchStartTime >= endTime) {
+    //     customThrowError(400, "Lunch start time must be between start time and end time");
+    // } else if (lunchEndTime <= lunchStartTime || lunchEndTime >= endTime) {
+    //     customThrowError(400, "Lunch end time must be between lunch start time and end time");
+    // }
 
     const schedule = await prisma.schedule.create({
         data: {
@@ -94,8 +95,8 @@ async function createDepartmentSchedule(req: Request, res: Response) {
             endTime: endTime,
             limitWorkHoursDay: req.body.limitWorkHoursDay,
             allowedOvertime: req.body.allowedOvertime,
-            lunchStartTime: lunchStartTime,
-            lunchEndTime: lunchEndTime,
+            // lunchStartTime: lunchStartTime,
+            // lunchEndTime: lunchEndTime,
         },
     });
 
@@ -128,8 +129,8 @@ async function updateDepartmentSchedule(req: Request, res: Response) {
         endTime: toZonedTime(req.body.endTime, timeZone),
         limitWorkHoursDay: req.body.limitWorkHoursDay,
         allowedOvertime: req.body.allowedOvertime,
-        lunchStartTime: toZonedTime(req.body.lunchStartTime, timeZone),
-        lunchEndTime: toZonedTime(req.body.lunchEndTime, timeZone),
+        // lunchStartTime: toZonedTime(req.body.lunchStartTime, timeZone),
+        // lunchEndTime: toZonedTime(req.body.lunchEndTime, timeZone),
     };
 
     validateUpdateRoleSchedule(body);
@@ -176,8 +177,8 @@ async function updateDepartmentSchedule(req: Request, res: Response) {
                     endTime: body.endTime ?? schedule.endTime,
                     limitWorkHoursDay: body.limitWorkHoursDay ?? schedule.limitWorkHoursDay,
                     allowedOvertime: body.allowedOvertime ?? schedule.allowedOvertime,
-                    lunchStartTime: body.lunchStartTime ?? schedule.lunchStartTime,
-                    lunchEndTime: body.lunchEndTime ?? schedule.lunchEndTime,
+                    // lunchStartTime: body.lunchStartTime ?? schedule.lunchStartTime,
+                    // lunchEndTime: body.lunchEndTime ?? schedule.lunchEndTime,
                 },
             },
         },
