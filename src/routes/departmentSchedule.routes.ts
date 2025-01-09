@@ -3,15 +3,15 @@ import departmentScheduleController from '../controllers/departmentSchedule';
 import { asyncHandler } from '../middlewares/errorHandler';
 import { teamLeaderMiddleware } from '../middlewares';
 
-const departmentScheduleRouter = express.Router();
+const routerDepartmentSchedule = express.Router();
 
-departmentScheduleRouter.route('/')
+routerDepartmentSchedule.route('/')
     .get(asyncHandler(departmentScheduleController.getAllDepartmentSchedules))
     .post(asyncHandler(departmentScheduleController.createDepartmentSchedule));
 
-departmentScheduleRouter.route('/:id')
+routerDepartmentSchedule.route('/:id')
     .put(teamLeaderMiddleware, asyncHandler(departmentScheduleController.updateDepartmentSchedule))
     .get(teamLeaderMiddleware, asyncHandler(departmentScheduleController.getDepartmentScheduleById))
     .delete(teamLeaderMiddleware, asyncHandler(departmentScheduleController.removeScheduleFromDepartment));
 
-export default departmentScheduleRouter;
+export default routerDepartmentSchedule;
