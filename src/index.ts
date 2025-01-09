@@ -17,7 +17,9 @@ import routerDepartment from './routes/department.routes';
 import routerAttendance from './routes/attendance.routes';
 import routerAuth from './routes/auth.routes';
 import sampleRouter from './routes/sample.routes';
-import departmentScheduleRouter from './routes/departmentSchedule.routes';
+import routerHoliday from './routes/holiday.routes';
+import routerDepartmentSchedule from './routes/departmentSchedule.routes';
+import routerPersonalSchedule from './routes/personalSchedule.routes';
 import { httpLoggerMiddleware } from './middlewares/logger';
 
 const app = express();
@@ -60,7 +62,9 @@ app.use("/api", routerAuth);
 app.use("/api/employee", routerEmployee);
 app.use("/api/department", routerDepartment);
 app.use("/api/attendance", routerAttendance)
-app.use("/api/department-schedule", departmentScheduleRouter);
+app.use("/api/department-schedule", routerDepartmentSchedule);
+app.use("/api/personal-schedule", routerPersonalSchedule);
+app.use("/api/holiday", routerHoliday);
 
 // Docs
 // Serve static files for Swagger UI
