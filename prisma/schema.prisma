@@ -124,13 +124,13 @@ model Employee {
 }
 
 model Department {
-  id                     Int                     @id @default(autoincrement())
-  name                   String                  @Db.VarChar(100)
-  leaderId               Int?                    @unique
-  Leader                 Employee?               @relation("DepartmentLeader", fields: [leaderId], references: [id], onDelete: SetNull, onUpdate: Cascade)
-  DepartmentSchedule     DepartmentSchedule[]
-  Employees              Employee[]              @relation("DepartmentEmployees")
-  departmentAnnouncement DepartmentAnnouncement?
+  id                 Int                  @id @default(autoincrement())
+  name               String               @Db.VarChar(100)
+  leaderId           Int?                 @unique
+  Leader             Employee?            @relation("DepartmentLeader", fields: [leaderId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  DepartmentSchedule DepartmentSchedule[]
+  Employees          Employee[]           @relation("DepartmentEmployees")
+  // departmentAnnouncement DepartmentAnnouncement? @relation("DepartmentAnnouncement")
 
   updatedAt DateTime @updatedAt
   createdAt DateTime @default(now())
@@ -139,9 +139,10 @@ model Department {
 }
 
 model Holiday {
-  id   Int      @id @default(autoincrement())
-  date DateTime
-  name String
+  id    Int    @id @default(autoincrement())
+  name  String
+  month Month  @default(JANUARY)
+  day   Int    @default(1)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -159,18 +160,20 @@ model Announcement {
   @@map("Announcement")
 }
 
-model DepartmentAnnouncement {
-  id           Int        @id @default(autoincrement())
-  title        String
-  body         String
-  departmentId Int        @unique
-  Department   Department @relation(fields: [departmentId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+// model DepartmentAnnouncement {
+//   id    Int    @id @default(autoincrement())
+//   title String
+//   body  String
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+//   departmentId Int        @unique
+//   Department   Department @relation("DepartmentAnnouncement", fields: [departmentId], references: [id], onDelete: Cascade, onUpdate: Cascade)
 
-  @@map("DepartmentAnnouncement")
-}
+//   createdAt DateTime @default(now())
+//   updatedAt DateTime @updatedAt
+
+//   @@index([departmentId])
+//   @@map("DepartmentAnnouncement")
+// }
 
 enum AccessLevel {
   ADMIN
@@ -200,4 +203,19 @@ enum AttendanceStatus {
   UNPAID_LEAVE
   PAID_LEAVE
   ONGOING
+}
+
+enum Month {
+  JANUARY
+  FEBRUARY
+  MARCH
+  APRIL
+  MAY
+  JUNE
+  JULY
+  AUGUST
+  SEPTEMBER
+  OCTOBER
+  NOVEMBER
+  DECEMBER
 }
