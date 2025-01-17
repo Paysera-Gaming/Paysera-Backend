@@ -21,6 +21,7 @@ import routerHoliday from './routes/holiday.routes';
 import routerDepartmentSchedule from './routes/departmentSchedule.routes';
 import routerPersonalSchedule from './routes/personalSchedule.routes';
 import { httpLoggerMiddleware } from './middlewares/logger';
+import routerAnnouncement from './routes/announcement.routes';
 
 const app = express();
 const port = configEnv.PORT || 3000;
@@ -59,6 +60,7 @@ app.use(compression()); // Compress responses
 // Routes
 app.use(sampleRouter);
 app.use("/api", routerAuth);
+app.use("/api/announcements", routerAnnouncement);
 app.use("/api/employee", routerEmployee);
 app.use("/api/department", routerDepartment);
 app.use("/api/attendance", routerAttendance)
