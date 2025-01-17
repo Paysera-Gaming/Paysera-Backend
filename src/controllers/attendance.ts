@@ -122,6 +122,11 @@ async function createAttendance(req: Request, res: Response) {
     let totalHoursWorked = 0;
     let totalLunchHours = 1;
 
+    if (body.status === "PAID_LEAVE") {
+        totalHours = 9;
+        totalHoursWorked = 8;
+    }
+
     // if (body.timeOut && body.lunchTimeOut) {
     //     totalHours = (body.timeOut.getTime() - body.timeIn.getTime()) / 1000 / 60 / 60;
     //     totalLunchHours = (body.lunchTimeOut.getTime() - body.lunchTimeIn.getTime()) / 1000 / 60 / 60;
