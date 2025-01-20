@@ -12,12 +12,12 @@ routerEmployee.route("/admin").get(asyncHandler(employee.getAllAdmin));
 routerEmployee
     .route("/")
     .get(asyncHandler(employee.getAllEmployees))
-    .post(adminMiddleware, asyncHandler(employee.createEmployee));
+    .post(teamLeaderMiddleware, asyncHandler(employee.createEmployee));
 routerEmployee
     .route("/:id")
     .get(asyncHandler(employee.getEmployeeById))
-    .delete(adminMiddleware, asyncHandler(employee.deleteEmployeeById))
-    .put(adminMiddleware, asyncHandler(employee.updateEmployee));
+    .delete(teamLeaderMiddleware, asyncHandler(employee.deleteEmployeeById))
+    .put(teamLeaderMiddleware, asyncHandler(employee.updateEmployee));
 
 
 export default routerEmployee;
