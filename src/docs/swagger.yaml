@@ -880,6 +880,202 @@ paths:
         "404":
           description: No attendance records found for this employee
 
+  /api/announcements:
+    get:
+      summary: Get all announcements
+      tags:
+        - Announcements
+      responses:
+        "200":
+          description: List of all announcements
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Announcement"
+        "404":
+          description: No announcements found
+    post:
+      summary: Create an announcement
+      tags:
+        - Announcements
+      requestBody:
+        description: Announcement details to create
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AnnouncementInput"
+      responses:
+        "201":
+          description: Announcement created successfully
+        "404":
+          description: Announcement already exists
+        "400":
+          description: Invalid input
+
+  /api/announcements/{id}:
+    get:
+      summary: Get an announcement by ID
+      tags:
+        - Announcements
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: Announcement ID
+      responses:
+        "200":
+          description: Announcement found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Announcement"
+        "400":
+          description: Invalid announcement ID
+        "404":
+          description: Announcement not found
+    put:
+      summary: Update an announcement
+      tags:
+        - Announcements
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: Announcement ID
+      requestBody:
+        description: Announcement details to update
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AnnouncementInput"
+      responses:
+        "200":
+          description: Announcement updated successfully
+        "404":
+          description: Announcement not found
+    delete:
+      summary: Delete an announcement
+      tags:
+        - Announcements
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: Announcement ID
+      responses:
+        "200":
+          description: Announcement deleted successfully
+        "404":
+          description: Announcement not found
+
+  /api/holiday:
+    get:
+      summary: Get all holidays
+      tags:
+        - Holiday
+      responses:
+        "200":
+          description: List of all holidays
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Holiday"
+        "404":
+          description: No holidays found
+    post:
+      summary: Create a holiday
+      tags:
+        - Holiday
+      requestBody:
+        description: Holiday details to create
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/HolidayInput"
+      responses:
+        "201":
+          description: Holiday created successfully
+        "404":
+          description: Holiday already exists
+        "400":
+          description: Invalid input
+
+  /api/holiday/{id}:
+    get:
+      summary: Get a holiday by ID
+      tags:
+        - Holiday
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: Holiday ID
+      responses:
+        "200":
+          description: Holiday found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Holiday"
+        "400":
+          description: Invalid holiday ID
+        "404":
+          description: Holiday not found
+    put:
+      summary: Update a holiday
+      tags:
+        - Holiday
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: Holiday ID
+      requestBody:
+        description: Holiday details to update
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/HolidayInput"
+      responses:
+        "200":
+          description: Holiday updated successfully
+        "404":
+          description: Holiday not found
+    delete:
+      summary: Delete a holiday
+      tags:
+        - Holiday
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: Holiday ID
+      responses:
+        "200":
+          description: Holiday deleted successfully
+        "404":
+          description: Holiday not found
+
 # END OF ROUTES
 components:
   schemas:
@@ -1203,6 +1399,58 @@ components:
           type: string
           format: date-time
         overtimeTotal:
+          type: number
+
+    Announcement:
+      type: object
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+        content:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    AnnouncementInput:
+      type: object
+      properties:
+        title:
+          type: string
+        content:
+          type: string
+
+    Holiday:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        month:
+          type: string
+        day:
+          type: number
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    HolidayInput:
+      type: object
+      properties:
+        name:
+          type: string
+        month:
+          type: string
+        day:
           type: number
 
     AttendanceUpdate:
