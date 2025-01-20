@@ -283,6 +283,31 @@ export const seedDatabase = async () => {
             },
         });
 
+
+        await prisma.holiday.create({
+            data: {
+                name: 'Christmas',
+                month: 'DECEMBER',
+                day: 25,
+            },
+        });
+
+        await prisma.holiday.create({
+            data: {
+                name: 'New Year',
+                month: 'JANUARY',
+                day: 1,
+            },
+        });
+
+        await prisma.announcement.create({
+            data: {
+                title: 'Announcement 1',
+                body: 'This is the body of announcement 1',
+
+            },
+        });
+
     } catch (error) {
         console.error('Error seeding data:', error);
     }
@@ -294,6 +319,7 @@ export async function cleanUpDatabase() {
     await prisma.schedule.deleteMany();
     await prisma.employee.deleteMany();
     await prisma.department.deleteMany();
+    await prisma.holiday.deleteMany();
 }
 
 seedDatabase();
