@@ -8,7 +8,9 @@ export default async () => {
     await prisma.departmentSchedule.deleteMany();
     await prisma.employee.deleteMany();
     await prisma.department.deleteMany();
-
+    await prisma.announcement.deleteMany();
+    await prisma.holiday.deleteMany();
+    await prisma.personalSchedule.deleteMany();
 
     // Disconnect the Prisma client
     await prisma.$disconnect();

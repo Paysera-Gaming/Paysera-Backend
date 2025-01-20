@@ -295,9 +295,21 @@ export default async () => {
             },
         });
 
-        const response = await request(app)
-            .post('/login') // Make sure this route exists
-            .send({ username: 'admin', password: 'testpass' });
+        await prisma.holiday.create({
+            data: {
+                name: 'Christmas',
+                month: 'DECEMBER',
+                day: 25,
+            },
+        });
+
+        await prisma.holiday.create({
+            data: {
+                name: 'New Year',
+                month: 'JANUARY',
+                day: 1,
+            },
+        });
 
     } catch (error) {
         console.error('Error seeding data:', error);
