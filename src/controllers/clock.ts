@@ -4,11 +4,12 @@ import { prisma } from '../config/database';
 import { customThrowError } from '../middlewares/errorHandler';
 import { toZonedTime } from 'date-fns-tz';
 import { initializeDateTimeZone } from '../utils/date';
+import { Month } from '@prisma/client';
 
 const timeZone = 'Asia/Manila';
 
 
-// POST /api / attendance / time -in
+// POST /api / attendance / time-in
 async function timeIn(req: Request, res: Response) {
     if (!req.body.employeeId || !req.body.timeStamp) {
         return customThrowError(400, 'Employee ID and time in are required');
@@ -61,7 +62,21 @@ async function timeIn(req: Request, res: Response) {
         return customThrowError(400, 'Employee schedule not found');
     }
 
-    // if weekend don't allow time in in department schedule
+    //Check if the current day is holiday
+    const month = format(body.timeIn, 'MMMM');
+    const day = format(body.timeIn, 'd');
+    let holiday = await prisma.holiday.findFirst({
+        where: {
+            month: month.toUpperCase() as Month,
+            day: Number(day),
+        },
+    });
+
+    if (holiday) {
+        return customThrowError(400, 'Time in on a holiday is not allowed');
+    }
+
+    // if weekend don't allow time in in department schedule unless environment is testing
     const currentDay = format(body.timeIn, 'EEEE');
     if (isDepartmentSchedule && (currentDay === 'Saturday' || currentDay === 'Sunday')) {
         return customThrowError(400, 'Weekend not allowed to time in');
@@ -137,7 +152,7 @@ async function timeIn(req: Request, res: Response) {
         await prisma.attendance.create({
             data: {
                 employeeId: body.employeeId,
-                date: format(timeIn, 'MMMM d, yyyy'), // Format date for the record
+                date: format(effectiveTimeIn, 'MMMM d, yyyy'), // Format date for the record
                 status: 'ONGOING',
                 scheduleType: currentSchedule.scheduleType,
                 timeIn: effectiveTimeIn,
@@ -156,8 +171,11 @@ async function timeIn(req: Request, res: Response) {
 
 // POST /api/attendance/time-out
 async function timeOut(req: Request, res: Response) {
-    if (!req.body.employeeId || !req.body.timeStamp) {
-        return customThrowError(400, 'Employee ID and time in are required');
+    if (!req.body.employeeId) {
+        return customThrowError(400, 'Employee ID is required');
+    }
+    if (!req.body.timeStamp) {
+        return customThrowError(400, 'Time stamp is required');
     }
 
     const body = {
@@ -167,11 +185,6 @@ async function timeOut(req: Request, res: Response) {
 
     if (isNaN(body.timeOut.getTime())) {
         return customThrowError(400, 'Invalid time out');
-    }
-
-    // Validate input
-    if (!body.employeeId || !body.timeOut) {
-        return customThrowError(400, 'Employee ID and time out are required');
     }
 
     // Check if employee exists
