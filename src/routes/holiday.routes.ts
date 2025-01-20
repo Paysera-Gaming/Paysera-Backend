@@ -13,4 +13,7 @@ routerHoliday.route("/:id")
     .put(asyncHandler(holiday.updateHoliday))
     .delete(asyncHandler(holiday.deleteHoliday));
 
+
+routerHoliday.route("/month/:month/day/:day").get(asyncHandler(holiday.getHolidayByMonthDay));
+
 export default routerHoliday;
