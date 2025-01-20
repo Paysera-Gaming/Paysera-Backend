@@ -1,11 +1,9 @@
-// tests/attendance.test.ts
 import request from 'supertest';
 import app from '..'; // Adjust the path to your Express app
 import { prisma } from '../config/database';
 import { formatDate } from 'date-fns';
-import { time } from 'console';
 
-describe('Attendance Routes', () => {
+describe('Test for flexi', () => {
     let employeeId: number;
     let departmentId: number;
     let departmentScheduleId: number;
@@ -17,17 +15,18 @@ describe('Attendance Routes', () => {
         // Create a department
         const department = await prisma.department.create({
             data: {
-                name: 'IT Department',
+                name: 'Flexi Department',
             },
         });
 
         departmentId = department.id;
 
         // Create a department schedule
-        const fixedSchedule = await prisma.schedule.create({
+        const flexiSchedule = await prisma.schedule.create({
             data: {
-                scheduleType: 'FIXED',
+                scheduleType: 'FLEXI',
                 startTime: new Date(2020, 8, 15, 8, 0, 0),  // 8:00 AM
+                startTimeLimit: new Date(2020, 8, 15, 10, 0, 0),   // 10:00 AM
                 endTime: new Date(2020, 8, 15, 17, 0, 0),   // 5:00 PM
                 lunchStartTime: new Date(2020, 8, 15, 12, 0, 0),   // 12:00 PM
                 lunchEndTime: new Date(2020, 8, 15, 13, 0, 0),   // 1:00 PM
@@ -42,18 +41,18 @@ describe('Attendance Routes', () => {
             },
         });
 
-        departmentScheduleId = fixedSchedule.id;
+        departmentScheduleId = flexiSchedule.id;
 
         // Create an employee and set a time-in record to use in tests
         const employee = await prisma.employee.create({
             data: {
                 role: 'Programmer',
                 departmentId,
-                username: 'FixedClock',
-                passwordCredentials: 'password',
-                firstName: 'FixedClock',
-                lastName: 'FixedClock',
-                middleName: 'FixedClock',
+                username: 'FlexiClock',
+                passwordCredentials: 'FlexiClock',
+                firstName: 'FlexiClock',
+                lastName: 'FlexiClock',
+                middleName: 'FlexiClock',
                 accessLevel: 'EMPLOYEE',
             },
         });
@@ -61,14 +60,43 @@ describe('Attendance Routes', () => {
     });
 
     describe('POST /api/attendance/time-in', () => {
+
+        it('should return error because time in is not within allowed time in frame', async () => {
+            const now = new Date();
+
+            // too early
+            timeIn = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 7, 0, 0);
+
+            const res = await request(app)
+                .post('/api/attendance/time-in')
+                .send({
+                    employeeId,
+                    timeStamp: timeIn,
+                });
+
+            expect(res.status).toBe(400);
+
+
+            // too late
+            timeIn = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 11, 0, 0);
+            const res2 = await request(app)
+                .post('/api/attendance/time-in')
+                .send({
+                    employeeId,
+                    timeStamp: timeIn,
+                });
+
+            expect(res2.status).toBe(400);
+
+            console.log(res.body, "res", res2.body, "res2");
+
+        });
+
         it('should record time in successfully', async () => {
 
             const now = new Date();
             timeIn = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 8, 0, 0);
 
-            console.log(timeIn, "time in test");
-
-            // get timeIn AM and PM format
             const res = await request(app)
                 .post('/api/attendance/time-in')
                 .send({
@@ -115,113 +143,11 @@ describe('Attendance Routes', () => {
                     timeStamp: new Date(2024, 8, 12, 23, 59, 59),
                 }).expect(400);
         });
-
-
-        it('should return 400 if timeIn is on holiday', async () => {
-
-            // Create a holiday
-            const holiday = await prisma.holiday.create({
-                data: {
-                    name: 'New Year',
-                    day: 1,
-                    month: "JANUARY",
-                },
-            });
-
-            const res = await request(app)
-                .post('/api/attendance/time-in')
-                .send({
-                    employeeId,
-                    timeStamp: new Date(2025, 0, 1, 8, 0, 0), // January 1, 2025
-                }).expect(400);
-        });
     });
-
-    // describe('POST /api/attendance/lunch-in', () => {
-    //     it('should record lunch in successfully', async () => {
-    //         lunchTimeIn = new Date(2024, 8, 15, 12, 0, 0);  // get the current time 1 hour after timeIn
-
-    //         const respond = await request(app)
-    //             .post('/api/attendance/lunch-in')
-    //             .send({
-    //                 employeeId,
-    //                 timeStamp: lunchTimeIn,
-    //             }).expect(200);
-
-    //         const attendance = await prisma.attendance.findFirst({
-    //             where: { employeeId },
-    //         });
-
-    //         console.log(attendance, "attendance lunch in");
-
-    //     });
-
-    //     it('should return 400 already lunch-in', async () => {
-    //         const res = await request(app)
-    //             .post('/api/attendance/lunch-in')
-    //             .send({
-    //                 employeeId,
-    //                 lunchTimeIn: lunchTimeIn,
-    //             });
-
-    //         expect(res.status).toBe(400);
-    //     });
-
-    //     it('should return 400 if lunchTimeIn is missing', async () => {
-    //         const res = await request(app)
-    //             .post('/api/attendance/lunch-in')
-    //             .send({
-    //                 employeeId,
-    //             });
-
-    //         expect(res.status).toBe(400);
-    //     });
-    // });
-
-    // describe('POST /api/attendance/lunch-out', () => {
-    //     it('should record lunch out successfully', async () => {
-    //         lunchTimeOut = new Date(lunchTimeIn.getTime() + 3600 * 1000); // 1 hour after lunchTimeIn
-
-    //         const res = await request(app)
-    //             .post('/api/attendance/lunch-out')
-    //             .send({
-    //                 employeeId,
-    //                 timeStamp: lunchTimeOut,
-    //             }).expect(200);
-
-    //         const attendance = await prisma.attendance.findFirst({
-    //             where: { employeeId },
-    //         });
-    //         expect(attendance?.lunchTimeOut?.toISOString()).toBe(lunchTimeOut.toISOString());
-    //     });
-
-    //     it('should return 400 already lunch out', async () => {
-    //         const res = await request(app)
-    //             .post('/api/attendance/lunch-out')
-    //             .send({
-    //                 employeeId,
-    //                 timeStamp: lunchTimeOut,
-    //             });
-
-    //         expect(res.status).toBe(400);
-    //     });
-
-    //     it('should return 400 if lunchTimeOut is missing', async () => {
-    //         const res = await request(app)
-    //             .post('/api/attendance/lunch-out')
-    //             .send({
-    //                 employeeId,
-    //             });
-
-    //         expect(res.status).toBe(400);
-    //     });
-    // });
 
     describe('POST /api/attendance/time-out', () => {
         it('should record time out successfully', async () => {
             const timeOut = new Date(timeIn.getTime() + 3600 * 9000); // 9 hours after timeIn
-
-            console.log(employeeId, timeOut, "time out test");
 
             const res = await request(app)
                 .post('/api/attendance/time-out')
@@ -230,12 +156,15 @@ describe('Attendance Routes', () => {
                     timeStamp: timeOut,
                 }).expect(200);
 
-            const attendance = res.body;
-            console.log(attendance, "attendance done");
-
+            const attendance = await prisma.attendance.findFirst({
+                where: {
+                    employeeId,
+                    date: formatDate(timeIn, 'MMMM d, yyyy')
+                },
+            });
 
             expect(attendance?.status).toBe('DONE');
-            expect(formatDate(attendance?.timeOut, 'MMMM d, yyyy')).toBe(formatDate(timeOut, 'MMMM d, yyyy'));
+            expect(attendance?.date).toBe(formatDate(timeOut, 'MMMM d, yyyy'));
             expect(attendance?.timeHoursWorked).toBeLessThanOrEqual(8);
             expect(attendance?.timeTotal).toBe(9);
         });
