@@ -28,7 +28,6 @@ export const seedDatabase = async () => {
             data: {
                 username: 'ADMIN12345',
                 accessLevel: 'ADMIN',
-                isActive: true,
                 passwordCredentials: hashPasswordA,
                 firstName: 'Ervin',
                 lastName: 'Pangilinan',
@@ -43,7 +42,6 @@ export const seedDatabase = async () => {
             data: {
                 username: 'TEAM_LEADER12345',
                 accessLevel: 'TEAM_LEADER',
-                isActive: true,
                 passwordCredentials: hashPasswordL,
                 firstName: 'Leader1',
                 lastName: 'Leader1',
@@ -62,7 +60,6 @@ export const seedDatabase = async () => {
             data: {
                 username: 'leader2',
                 accessLevel: 'TEAM_LEADER',
-                isActive: true,
                 passwordCredentials: 'hashed_password',
                 firstName: 'leader2',
                 lastName: 'leader2',
@@ -87,13 +84,35 @@ export const seedDatabase = async () => {
             data: {
                 username: 'EMPLOYEE12345',
                 accessLevel: 'EMPLOYEE',
-                isActive: true,
                 passwordCredentials: hashPasswordE,
                 firstName: 'employee1 ',
                 lastName: 'employee1 ',
                 middleName: 'employee1 ',
                 role: 'ENGINEER',
                 departmentId: department1.id,
+                Attendance: {
+                    create: {
+                        date: formatDate(new Date()),
+                        status: 'DONE',
+                        scheduleType: 'FIXED',
+                        timeIn: new Date(2025, 0, 27, 8, 0, 0),
+                        timeOut: new Date(2025, 0, 27, 17, 0, 0),
+                        timeTotal: 9,
+                        timeHoursWorked: 8,
+                    },
+                },
+                PersonalSchedule: {
+                    create: {
+                        day: ['MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY'],
+                        Schedule: {
+                            create: {
+                                scheduleType: 'FIXED',
+                                startTime: new Date(2025, 0, 27, 8, 0, 0),
+                                endTime: new Date(2025, 0, 27, 17, 0, 0),
+                            },
+                        }
+                    },
+                },
             },
         });
 
@@ -101,12 +120,22 @@ export const seedDatabase = async () => {
             data: {
                 username: 'employee2',
                 accessLevel: 'EMPLOYEE',
-                isActive: true,
                 passwordCredentials: 'hashed_password',
                 firstName: 'employee2',
                 lastName: 'employee2',
                 middleName: 'employee2',
                 role: 'DESIGNER',
+                Attendance: {
+                    create: {
+                        date: formatDate(new Date()),
+                        status: 'DONE',
+                        scheduleType: 'FIXED',
+                        timeIn: new Date(2025, 0, 27, 8, 0, 0),
+                        timeOut: new Date(2025, 0, 27, 17, 0, 0),
+                        timeTotal: 9,
+                        timeHoursWorked: 8,
+                    },
+                },
                 Department: {
                     connect: {
                         id: department2.id,
@@ -119,13 +148,27 @@ export const seedDatabase = async () => {
             data: {
                 username: 'employee3',
                 accessLevel: 'EMPLOYEE',
-                isActive: true,
                 passwordCredentials: 'hashed_password',
                 firstName: 'employee3',
                 lastName: 'employee3',
                 middleName: 'employee3',
-                role: 'ENGINE',
-                departmentId: department1.id,
+                role: 'DESIGNER',
+                Attendance: {
+                    create: {
+                        date: formatDate(new Date()),
+                        status: 'DONE',
+                        scheduleType: 'FIXED',
+                        timeIn: new Date(2025, 0, 27, 8, 0, 0),
+                        timeOut: new Date(2025, 0, 27, 17, 0, 0),
+                        timeTotal: 9,
+                        timeHoursWorked: 8,
+                    },
+                },
+                Department: {
+                    connect: {
+                        id: department2.id,
+                    },
+                },
             },
         });
 
@@ -135,12 +178,22 @@ export const seedDatabase = async () => {
             data: {
                 username: 'employee4',
                 accessLevel: 'EMPLOYEE',
-                isActive: true,
                 passwordCredentials: 'hashed_password',
                 firstName: 'employee4',
                 lastName: 'employee4',
                 middleName: 'employee4',
                 role: 'DESIGNER',
+                Attendance: {
+                    create: {
+                        date: formatDate(new Date()),
+                        status: 'DONE',
+                        scheduleType: 'FIXED',
+                        timeIn: new Date(2025, 0, 27, 8, 0, 0),
+                        timeOut: new Date(2025, 0, 27, 17, 0, 0),
+                        timeTotal: 9,
+                        timeHoursWorked: 8,
+                    },
+                },
                 Department: {
                     connect: {
                         id: department2.id,
@@ -153,13 +206,23 @@ export const seedDatabase = async () => {
             data: {
                 username: 'employee5',
                 accessLevel: 'EMPLOYEE',
-                isActive: true,
                 passwordCredentials: 'hashed_password',
                 firstName: 'employee5',
                 lastName: 'employee5',
                 middleName: 'employee5',
                 role: 'ENGINE',
                 departmentId: department1.id,
+                Attendance: {
+                    create: {
+                        date: formatDate(new Date()),
+                        status: 'DONE',
+                        scheduleType: 'FIXED',
+                        timeIn: new Date(2025, 0, 27, 8, 0, 0),
+                        timeOut: new Date(2025, 0, 27, 17, 0, 0),
+                        timeTotal: 9,
+                        timeHoursWorked: 8,
+                    },
+                },
             },
         });
 
@@ -167,7 +230,6 @@ export const seedDatabase = async () => {
             data: {
                 username: 'employee6',
                 accessLevel: 'EMPLOYEE',
-                isActive: true,
                 passwordCredentials: 'hashed_password',
                 firstName: 'employee6',
                 lastName: 'employee6',
@@ -178,6 +240,17 @@ export const seedDatabase = async () => {
                         id: department2.id,
                     },
                 },
+                Attendance: {
+                    create: {
+                        date: formatDate(new Date()),
+                        status: 'DONE',
+                        scheduleType: 'FIXED',
+                        timeIn: new Date(2025, 0, 27, 8, 0, 0),
+                        timeOut: new Date(2025, 0, 27, 17, 0, 0),
+                        timeTotal: 9,
+                        timeHoursWorked: 8,
+                    },
+                },
             },
         });
 
@@ -185,13 +258,23 @@ export const seedDatabase = async () => {
             data: {
                 username: 'employee7',
                 accessLevel: 'EMPLOYEE',
-                isActive: true,
                 passwordCredentials: 'hashed_password',
                 firstName: 'employee7',
                 lastName: 'employee7',
                 middleName: 'employee7',
                 role: 'ENGINE',
                 departmentId: department1.id,
+                Attendance: {
+                    create: {
+                        date: formatDate(new Date()),
+                        status: 'DONE',
+                        scheduleType: 'FIXED',
+                        timeIn: new Date(2025, 0, 27, 8, 0, 0),
+                        timeOut: new Date(2025, 0, 27, 17, 0, 0),
+                        timeTotal: 9,
+                        timeHoursWorked: 8,
+                    },
+                },
             },
         });
 
@@ -199,7 +282,6 @@ export const seedDatabase = async () => {
             data: {
                 username: 'employee8',
                 accessLevel: 'EMPLOYEE',
-                isActive: true,
                 passwordCredentials: 'hashed_password',
                 firstName: 'employee8',
                 lastName: 'employee8',
