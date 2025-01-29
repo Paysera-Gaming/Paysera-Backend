@@ -1,22 +1,36 @@
-import { set, getHours, getMinutes } from 'date-fns';
-import { toZonedTime } from "date-fns-tz";
+import { TZDate } from '@date-fns/tz';
+import { set, getHours, getMinutes, getSeconds, formatDate } from 'date-fns';
 
 const TIMEZONE = 'Asia/Manila';
 
-export function initializeDateTimeZone(date: Date, timeZone = TIMEZONE): Date {
-    return set(toZonedTime(new Date(), timeZone), {
+export function initializeHourTimeZone(date: Date, timeZone = TIMEZONE): Date {
+    return set(new TZDate(new Date(), timeZone), {
         hours: getHours(date),
         minutes: getMinutes(date),
-        seconds: 0,
-        milliseconds: 0,
+        seconds: getSeconds(date),
     });
 }
 
-export function createDateZoneFromHours(hours: number, timeZone = TIMEZONE): Date {
-    return set(toZonedTime(new Date(), timeZone), {
-        hours,
-        minutes: 0,
-        seconds: 0,
-        milliseconds: 0,
-    });
+export function initializeDateTimeZone(date: Date, timeZone = TIMEZONE): Date {
+    const newDate = new TZDate(date, "Asia/Manila");
+
+    return set(new TZDate(new Date(), timeZone), {
+        year: newDate.getFullYear(),
+        month: newDate.getMonth(),
+        date: newDate.getDate(),
+        hours: getHours(newDate),
+        minutes: getMinutes(date),
+        seconds: getSeconds(date),
+    })
+}
+
+export function printDate(date: Date) {
+    console.log(getHours(date), getMinutes(date), getSeconds(date));
+    console.log(formatDate(date, 'MMMM d, yyyy hh:mm:ss a'));
+
+    return formatDate(date, 'MMMM d, yyyy hh:mm:ss a');
+}
+
+export function returnFormatDate(date: Date) {
+    return formatDate(date, 'MMMM d, yyyy hh:mm:ss a');
 }
