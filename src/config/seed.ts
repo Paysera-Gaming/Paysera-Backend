@@ -2,6 +2,7 @@ import { formatDate } from "../utils/time";
 import { prisma } from "./database";
 import bcrypt from 'bcryptjs';
 import { configEnv } from "./dotenv";
+import request from 'supertest';
 
 export const seedDatabase = async () => {
     // Clean up the database first
@@ -91,7 +92,7 @@ export const seedDatabase = async () => {
                 firstName: 'employee1 ',
                 lastName: 'employee1 ',
                 middleName: 'employee1 ',
-                role: 'ENGINE',
+                role: 'ENGINEER',
                 departmentId: department1.id,
             },
         });
@@ -127,6 +128,8 @@ export const seedDatabase = async () => {
                 departmentId: department1.id,
             },
         });
+
+
 
         const employee4 = await prisma.employee.create({
             data: {
@@ -214,21 +217,19 @@ export const seedDatabase = async () => {
         const schedule1 = await prisma.schedule.create({
             data: {
                 scheduleType: 'FIXED',
-                startTime: new Date('2024-08-01T09:00:00Z'),
-                endTime: new Date('2024-08-01T17:00:00Z'),
-                lunchStartTime: new Date('2024-08-01T12:00:00Z'),
-                lunchEndTime: new Date('2024-08-01T13:00:00Z'),
+                startTime: (new Date('2024-08-01T08:00:00Z')),
+                endTime: (new Date('2024-08-01T17:00:00Z')),
+                limitWorkHoursDay: 8,
             },
         });
 
         const schedule2 = await prisma.schedule.create({
             data: {
                 scheduleType: 'FLEXI',
-                startTime: new Date('2024-08-01T10:00:00Z'),
-                endTime: new Date('2024-08-01T18:00:00Z'),
+                startTime: (new Date('2024-08-01T08:00:00Z')),
+                startTimeLimit: (new Date('2024-08-01T10:00:00Z')),
+                endTime: (new Date('2024-08-01T16:00:00Z')),
                 limitWorkHoursDay: 8,
-                lunchStartTime: new Date('2024-08-01T12:00:00Z'),
-                lunchEndTime: new Date('2024-08-01T13:00:00Z'),
             },
         });
 
@@ -259,12 +260,51 @@ export const seedDatabase = async () => {
                 date: formatDate(new Date()),
                 status: 'DONE',
                 scheduleType: 'FLEXI',
-                timeIn: new Date(new Date().setHours(10, 0, 0, 0)),
-                timeOut: new Date(new Date().setHours(18, 0, 0, 0)),
+                timeIn: new Date(2025, 0, 27, 8, 0, 0),
+                timeOut: new Date(2025, 0, 27, 17, 0, 0),
                 timeTotal: 8,
-                lunchTimeIn: new Date(new Date().setHours(12, 0, 0, 0)),
-                lunchTimeOut: new Date(new Date().setHours(13, 0, 0, 0)),
-                lunchTimeTotal: 1,
+            },
+        });
+
+        // Create Attendance Records
+        await prisma.attendance.create({
+            data: {
+                employeeId: employee1.id,
+                date: formatDate(new Date()),
+                status: 'DONE',
+                scheduleType: 'FIXED',
+                timeIn: new Date(2025, 0, 27, 8, 0, 0),
+                timeOut: new Date(2025, 0, 27, 17, 0, 0),
+                timeTotal: 8,
+            },
+        });
+
+        await prisma.attendance.create({
+            data: {
+                employeeId: employee1.id,
+                date: formatDate(new Date()),
+                status: 'DONE',
+                scheduleType: 'FIXED',
+                timeIn: new Date(2025, 0, 26, 8, 0, 0),
+                timeOut: new Date(2025, 0, 26, 18, 0, 0),
+                timeTotal: 10,
+                timeHoursWorked: 8,
+                overTimeTotal: 1,
+
+            },
+        });
+
+        await prisma.attendance.create({
+            data: {
+                employeeId: employee1.id,
+                date: formatDate(new Date()),
+                status: 'DONE',
+                scheduleType: 'FIXED',
+                timeIn: new Date(2025, 0, 25, 8, 0, 0),
+                timeOut: new Date(2025, 0, 25, 18, 0, 0),
+                timeTotal: 10,
+                timeHoursWorked: 8,
+                overTimeTotal: 1,
             },
         });
 
@@ -277,35 +317,70 @@ export const seedDatabase = async () => {
                 timeIn: new Date(new Date().setHours(10, 0, 0, 0)),
                 timeOut: new Date(new Date().setHours(18, 0, 0, 0)),
                 timeTotal: 8,
-                lunchTimeIn: new Date(new Date().setHours(12, 0, 0, 0)),
-                lunchTimeOut: new Date(new Date().setHours(13, 0, 0, 0)),
-                lunchTimeTotal: 1,
             },
         });
 
 
-        await prisma.holiday.create({
-            data: {
-                name: 'Christmas',
-                month: 'DECEMBER',
-                day: 25,
-            },
+        // Holiday seeds
+        await request('http://localhost:8080').post('/api/holiday').send({
+            name: 'Christmas',
+            month: 'DECEMBER',
+            day: 25,
         });
 
-        await prisma.holiday.create({
-            data: {
-                name: 'New Year',
-                month: 'JANUARY',
-                day: 1,
-            },
+        await request('http://localhost:8080').post('/api/holiday').send({
+            name: 'New Year',
+            month: 'JANUARY',
+            day: 1,
         });
 
-        await prisma.announcement.create({
-            data: {
-                title: 'Announcement 1',
-                body: 'This is the body of announcement 1',
+        // Special Holidays in the Philippine Calendar
+        await request('http://localhost:8080').post('/api/holiday').send({
+            name: 'Chinese New Year',
+            month: 'FEBRUARY',
+            day: 1,
+        });
 
-            },
+        await request('http://localhost:8080').post('/api/holiday').send({
+            name: 'EDSA People Power Revolution Anniversary',
+            month: 'FEBRUARY',
+            day: 25,
+        });
+
+        await request('http://localhost:8080').post('/api/holiday').send({
+            name: 'Black Saturday',
+            month: 'APRIL',
+            day: 16,
+        });
+
+        await request('http://localhost:8080').post('/api/holiday').send({
+            name: 'Ninoy Aquino Day',
+            month: 'AUGUST',
+            day: 21,
+        });
+
+        await request('http://localhost:8080').post('/api/holiday').send({
+            name: 'All Saints Day',
+            month: 'NOVEMBER',
+            day: 1,
+        });
+
+        await request('http://localhost:8080').post('/api/holiday').send({
+            name: 'All Souls Day',
+            month: 'NOVEMBER',
+            day: 2,
+        });
+
+        await request('http://localhost:8080').post('/api/holiday').send({
+            name: 'Bonifacio Day',
+            month: 'NOVEMBER',
+            day: 30,
+        });
+
+        await request('http://localhost:8080').post('/api/holiday').send({
+            name: 'Labour Day',
+            month: 'MAY',
+            day: 1,
         });
 
     } catch (error) {
