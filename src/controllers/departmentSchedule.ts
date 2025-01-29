@@ -3,7 +3,8 @@ import { customThrowError } from '../middlewares/errorHandler';
 import { validateCreateRoleSchedule } from '../validate/schedule.validation';
 import { validateUpdateRoleSchedule } from '../validate/scheduleUpdate.validation';
 import { Request, Response } from 'express';
-import { toZonedTime } from 'date-fns-tz';
+import { initializeDateTimeZone, initializeHourTimeZone, printDate } from '../utils/date';
+import { isAfter } from 'date-fns';
 
 // GET /department-schedule
 async function getAllDepartmentSchedules(req: Request, res: Response) {
@@ -58,28 +59,13 @@ async function createDepartmentSchedule(req: Request, res: Response) {
         customThrowError(404, "Department not found");
     }
 
-    const timeZone = 'Asia/Manila';
-    const startTime = toZonedTime(req.body.startTime, timeZone);
-    const endTime = toZonedTime(req.body.endTime, timeZone);
-    // const lunchStartTime = toZonedTime(req.body.lunchStartTime, timeZone);
-    // const lunchEndTime = toZonedTime(req.body.lunchEndTime, timeZone);
-
-    validateCreateRoleSchedule({
-        departmentId: departmentId,
-        role: req.body.role,
-        name: req.body.name,
-        scheduleType: req.body.scheduleType,
-        startTime: startTime,
-        endTime: endTime,
-        limitWorkHoursDay: req.body.limitWorkHoursDay,
-        allowedOvertime: req.body.allowedOvertime,
-        // lunchStartTime: lunchStartTime,
-        // lunchEndTime: lunchEndTime,
-    })
-
+    const startTime = initializeHourTimeZone(req.body.startTime);
+    const endTime = initializeHourTimeZone(req.body.endTime);
+    // const lunchStartTime = toZonedTime(req.body.lunchStartTime);
+    // const lunchEndTime = toZonedTime(req.body.lunchEndTime); 
 
     // validate schedule
-    if (startTime >= endTime) {
+    if (isAfter(startTime, endTime)) {
         customThrowError(400, "Start time must be before end time");
     }
     //  else if (lunchStartTime <= startTime || lunchStartTime >= endTime) {
@@ -87,6 +73,21 @@ async function createDepartmentSchedule(req: Request, res: Response) {
     // } else if (lunchEndTime <= lunchStartTime || lunchEndTime >= endTime) {
     //     customThrowError(400, "Lunch end time must be between lunch start time and end time");
     // }
+
+    validateCreateRoleSchedule({
+        departmentId: departmentId,
+        name: req.body.name,
+        role: req.body.role,
+        scheduleType: req.body.scheduleType,
+        startTime: startTime,
+        endTime: endTime,
+        // limitWorkHoursDay: req.body.limitWorkHoursDay,
+        allowedOvertime: req.body.allowedOvertime,
+        // lunchStartTime: lunchStartTime,
+        // lunchEndTime: lunchEndTime,
+    })
+
+
 
     const schedule = await prisma.schedule.create({
         data: {
@@ -120,17 +121,19 @@ async function updateDepartmentSchedule(req: Request, res: Response) {
         customThrowError(400, "Invalid department schedule ID");
     }
 
-    const timeZone = 'Asia/Manila';
+    const startTime = initializeHourTimeZone(req.body.startTime);
+    const endTime = initializeHourTimeZone(req.body.endTime);
+
     const body = {
         role: req.body.role,
         name: req.body.name,
         scheduleType: req.body.scheduleType,
-        startTime: toZonedTime(req.body.startTime, timeZone),
-        endTime: toZonedTime(req.body.endTime, timeZone),
+        startTime: startTime,
+        endTime: endTime,
         limitWorkHoursDay: req.body.limitWorkHoursDay,
         allowedOvertime: req.body.allowedOvertime,
-        // lunchStartTime: toZonedTime(req.body.lunchStartTime, timeZone),
-        // lunchEndTime: toZonedTime(req.body.lunchEndTime, timeZone),
+        // lunchStartTime: toZonedTime(req.body.lunchStartTime),
+        // lunchEndTime: toZonedTime(req.body.lunchEndTime),
     };
 
     validateUpdateRoleSchedule(body);
@@ -151,18 +154,9 @@ async function updateDepartmentSchedule(req: Request, res: Response) {
         return customThrowError(404, "Schedule not found");
     }
 
-    const startTime = toZonedTime(req.body.startTime, timeZone);
-    const endTime = toZonedTime(req.body.endTime, timeZone);
-    const lunchStartTime = toZonedTime(req.body.lunchStartTime, timeZone);
-    const lunchEndTime = toZonedTime(req.body.lunchEndTime, timeZone);
-
     // validate schedule
     if (startTime >= endTime) {
         customThrowError(400, "Start time must be before end time");
-    } else if (lunchStartTime <= startTime || lunchStartTime >= endTime) {
-        customThrowError(400, "Lunch start time must be between start time and end time");
-    } else if (lunchEndTime <= lunchStartTime || lunchEndTime >= endTime) {
-        customThrowError(400, "Lunch end time must be between lunch start time and end time");
     }
 
     await prisma.departmentSchedule.update({
