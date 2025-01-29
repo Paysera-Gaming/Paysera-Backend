@@ -2,8 +2,7 @@ import { Request, Response } from "express";
 import { prisma } from "../config/database";
 import { validateCreateDepartment, validateDepartmentAssignEmployee, validateDepartmentAssignLeader, validateDepartmentRemoveEmployee, validateUpdateDepartment } from "../validate/department.validation";
 import { customThrowError } from '../middlewares/errorHandler';
-import { toZonedTime } from 'date-fns-tz';
-
+import { initializeHourTimeZone } from "../utils/date";
 
 async function getAllDepartments(req: Request, res: Response) {
     const allDepartments = await prisma.department.findMany({
@@ -267,8 +266,8 @@ async function getDepartmentSchedulesToday(req: Request, res: Response) {
     }
 
     const timeZone = 'Asia/Manila';
-    const startOfDay = toZonedTime(new Date(new Date().setHours(0, 0, 0, 0)), timeZone);
-    const endOfDay = toZonedTime(new Date(new Date().setHours(23, 59, 59, 999)), timeZone);
+    const startOfDay = initializeHourTimeZone(new Date(new Date().setHours(0, 0, 0, 0)), timeZone);
+    const endOfDay = initializeHourTimeZone(new Date(new Date().setHours(23, 59, 59, 999)), timeZone);
 
     const schedules = await prisma.departmentSchedule.findMany({
         where: {
@@ -338,8 +337,8 @@ async function getDepartmentAttendanceToday(req: Request, res: Response) {
     }
 
     const timeZone = 'Asia/Manila';
-    const startOfDay = toZonedTime(new Date(new Date().setHours(0, 0, 0, 0)), timeZone);
-    const endOfDay = toZonedTime(new Date(new Date().setHours(23, 59, 59, 999)), timeZone);
+    const startOfDay = initializeHourTimeZone(new Date(new Date().setHours(0, 0, 0, 0)), timeZone);
+    const endOfDay = initializeHourTimeZone(new Date(new Date().setHours(23, 59, 59, 999)), timeZone);
 
     const attendance = await prisma.attendance.findMany({
         where: {
