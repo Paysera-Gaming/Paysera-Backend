@@ -3,8 +3,8 @@ import { prisma } from '../config/database';
 import { validateCreateAttendance, validateUpdateAttendance } from '../validate/attendance.validation';
 import { customThrowError } from '../middlewares/errorHandler';
 import { formatDate } from '../utils/time';
-import { parseISO, format, differenceInHours } from 'date-fns';
-import { toZonedTime } from 'date-fns-tz';
+import { parseISO, format, differenceInHours, differenceInMinutes, isAfter, set, getHours, getMinutes, getSeconds } from 'date-fns';
+import { initializeDateTimeZone, initializeHourTimeZone } from '../utils/date';
 
 async function getAllAttendance(req: Request, res: Response) {
     const allAttendance = await prisma.attendance.findMany({
@@ -87,11 +87,11 @@ async function createAttendance(req: Request, res: Response) {
 
     const body = {
         employeeId: req.body.employeeId,
-        date: toZonedTime(parseISO(req.body.date), timeZone),
+        date: initializeDateTimeZone(parseISO(req.body.date), timeZone),
         status: req.body.status,
         scheduleType: req.body.scheduleType,
-        timeIn: toZonedTime(parseISO(req.body.timeIn), timeZone),
-        timeOut: toZonedTime(parseISO(req.body.timeOut), timeZone),
+        timeIn: initializeDateTimeZone(parseISO(req.body.timeIn), timeZone),
+        timeOut: initializeDateTimeZone(parseISO(req.body.timeOut), timeZone),
         // lunchTimeIn: toZonedTime(parseISO(req.body.lunchTimeIn), timeZone),
         // lunchTimeOut: toZonedTime(parseISO(req.body.lunchTimeOut), timeZone),
         overtimeTotal: req.body.overtimeTotal,
@@ -127,12 +127,6 @@ async function createAttendance(req: Request, res: Response) {
         totalHoursWorked = 8;
     }
 
-    // if (body.timeOut && body.lunchTimeOut) {
-    //     totalHours = (body.timeOut.getTime() - body.timeIn.getTime()) / 1000 / 60 / 60;
-    //     totalLunchHours = (body.lunchTimeOut.getTime() - body.lunchTimeIn.getTime()) / 1000 / 60 / 60;
-    //     totalHoursWorked = totalHours - totalLunchHours;
-    // }
-
     await prisma.attendance.create({
         data: {
             employeeId: body.employeeId,
@@ -159,76 +153,64 @@ async function updateAttendance(req: Request, res: Response) {
         customThrowError(400, "Invalid attendance ID");
     }
 
-    const timeZone = 'Asia/Manila';
-
     const body = {
         employeeId: req.body.employeeId,
-        date: toZonedTime(parseISO(req.body.date), timeZone),
+        date: initializeDateTimeZone(req.body.date),
         status: req.body.status,
-        scheduleType: req.body.scheduleType,
-        timeIn: toZonedTime(parseISO(req.body.timeIn), timeZone),
-        timeOut: toZonedTime(parseISO(req.body.timeOut), timeZone),
-        // lunchTimeIn: toZonedTime(parseISO(req.body.lunchTimeIn), timeZone),
-        // lunchTimeOut: toZonedTime(parseISO(req.body.lunchTimeOut), timeZone),
+        timeIn: initializeDateTimeZone(req.body.timeIn),
+        timeOut: initializeDateTimeZone(req.body.timeOut),
         overTimeTotal: req.body.overTimeTotal,
     }
 
     validateUpdateAttendance(body);
 
-    const existingAttendance = await prisma.attendance.findUnique({
+    const currentAttendance = await prisma.attendance.findUnique({
         where: { id: attendanceId },
     });
 
-    const existingEmployee = await prisma.employee.findUnique({
-        where: { id: body.employeeId },
-    });
-
-    if (!existingAttendance) {
-        return customThrowError(404, "Attendance record not found");
-    } else if (!existingEmployee) {
-        return customThrowError(404, "Employee not found");
-    }
-
-    // Calculate total hours worked and lunch hours
-    let totalHours = differenceInHours(body.timeOut, body.timeIn);
-
-    // lunch time is fixed to 1 hour
-    let totalLunchHours = 1;
-    let totalHoursWorked = totalHours > 1 ? totalHours - totalLunchHours : totalHours;
-    let totalOvertime = body.overTimeTotal || 0;
-
-    if (body.scheduleType === 'FIXED' || body.scheduleType === 'FLEXI') {
-        // don't allow overtime for fixed and flexi schedules
-        if (totalHoursWorked > 8) {
-            totalHoursWorked = 8;
-        }
-
-    } else if (body.scheduleType === 'SUPER_FLEXI') {
-
+    if (!currentAttendance) {
+        return customThrowError(404, 'Attendance record not found');
     }
 
 
-    // // Calculate total hours worked and lunch hours
-    // if (body.timeOut && body.lunchTimeOut) {
-    //     totalHours = (body.timeOut.getTime() - body.timeIn.getTime()) / 1000 / 60 / 60;
-    //     totalLunchHours = (body.lunchTimeOut.getTime() - body.lunchTimeIn.getTime()) / 1000 / 60 / 60;
-    //     totalHoursWorked = totalHours - totalLunchHours + (body.overTimeTotal || 0);
-    //     totalHours += (body.overTimeTotal || 0);
-    // }
+    // calculate total hours worked
+    let totalHours = differenceInMinutes(body.timeOut, body.timeIn);
+
+    // lunch default to 1 hour
+    let totalHoursWorked = totalHours / 60;
+    // Subtract lunch time from total working hours
+    let totalMinutesWithLunchMinus = totalHoursWorked;
+    if (totalMinutesWithLunchMinus > 60) {
+        totalMinutesWithLunchMinus -= 60;
+    }
+    let overtimeTotal = 0;
+
+    // calculate overtime
+    if (totalHoursWorked > 8) {
+        const timeAfterEightHours = set(body.timeIn, {
+            hours: getHours(body.timeIn) + 8,
+            minutes: getMinutes(body.timeIn),
+            seconds: getSeconds(body.timeIn),
+            milliseconds: 0,
+        });
+
+        const overtimeMinutes = differenceInMinutes(body.timeOut, timeAfterEightHours);
+        overtimeTotal = overtimeMinutes / 60;
+        totalHoursWorked = 8;
+    }
 
     await prisma.attendance.update({
         where: { id: attendanceId },
         data: {
             date: format(body.date, 'yyyy-MM-dd'), // Adjust date format as needed
-            status: body.status ?? existingAttendance.status,
-            timeOut: body.timeOut ?? existingAttendance.timeOut,
-            timeIn: body.timeIn ?? existingAttendance.timeIn,
+            status: body.status ?? currentAttendance.status,
+            timeOut: body.timeOut ?? currentAttendance.timeOut,
+            timeIn: body.timeIn ?? currentAttendance.timeIn,
+            timeTotal: totalHours / 60 || currentAttendance.timeTotal,
+            overTimeTotal: overtimeTotal ?? currentAttendance.overTimeTotal,
+            timeHoursWorked: totalHoursWorked || currentAttendance.timeHoursWorked,
             // lunchTimeIn: body.lunchTimeIn ?? existingAttendance.lunchTimeIn,
             // lunchTimeOut: body.lunchTimeOut ?? existingAttendance.lunchTimeOut,
-            timeTotal: totalHours || existingAttendance.timeTotal,
-            overTimeTotal: body.overTimeTotal ?? existingAttendance.overTimeTotal,
-            timeHoursWorked: totalHoursWorked || existingAttendance.timeHoursWorked,
-            lunchTimeTotal: totalLunchHours || existingAttendance.lunchTimeTotal,
         },
     });
 
