@@ -18,9 +18,6 @@ describe('Announcement Controller', () => {
             data: { title: 'Test Announcement', body: 'This is a test announcement' },
         });
 
-        departmentAnnouncement = await prisma.departmentAnnouncement.create({
-            data: { title: 'Test Department Announcement', body: 'This is a test department announcement', Department: { connect: { id: department.id } } },
-        });
     });
 
     describe('GET /announcements', () => {

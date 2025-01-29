@@ -28,12 +28,12 @@ describe('Department Schedule API', () => {
                 departmentId: department?.id || 1,
                 name: 'Test Schedule',
                 scheduleType: "FIXED",
-                startTime: new Date('2024-08-01T09:00:00Z'),
-                endTime: new Date('2024-08-01T17:00:00Z'),
+                startTime: new Date(2024, 8, 1, 9, 0, 0),
+                endTime: new Date(2024, 8, 1, 17, 0, 0),
                 limitWorkHoursDay: 8,
                 allowedOvertime: false,
-                lunchStartTime: new Date('2024-08-01T12:00:00Z'),
-                lunchEndTime: new Date('2024-08-01T13:00:00Z'),
+                // lunchStartTime: new Date('2024-08-01T12:00:00Z'),
+                // lunchEndTime: new Date('2024-08-01T13:00:00Z'),
             }).expect(201);
 
 
@@ -68,8 +68,8 @@ describe('Department Schedule API', () => {
                 role: 'Test Role',
                 name: 'Updated Schedule',
                 scheduleType: 'FIXED',
-                startTime: new Date('2024-08-01T09:00:00Z'),
-                endTime: new Date('2024-08-01T17:00:00Z'),
+                startTime: new Date(2024, 8, 1, 9, 0, 0),
+                endTime: new Date(2024, 8, 1, 17, 0, 0),
                 limitWorkHoursDay: 8,
                 allowedOvertime: false,
                 // lunchStartTime: new Date('2024-08-01T12:00:00Z'),

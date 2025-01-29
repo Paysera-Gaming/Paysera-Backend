@@ -2,6 +2,8 @@ import request from 'supertest';
 import app from '..'; // Adjust the path to your Express app
 import { prisma } from '../config/database';
 import { formatDate } from 'date-fns';
+import { initializeHourTimeZone } from '../utils/date';
+import { addHours } from 'date-fns';
 
 describe('Test for flexi', () => {
     let employeeId: number;
@@ -28,8 +30,6 @@ describe('Test for flexi', () => {
                 startTime: new Date(2020, 8, 15, 8, 0, 0),  // 8:00 AM
                 startTimeLimit: new Date(2020, 8, 15, 10, 0, 0),   // 10:00 AM
                 endTime: new Date(2020, 8, 15, 17, 0, 0),   // 5:00 PM
-                lunchStartTime: new Date(2020, 8, 15, 12, 0, 0),   // 12:00 PM
-                lunchEndTime: new Date(2020, 8, 15, 13, 0, 0),   // 1:00 PM
                 limitWorkHoursDay: 9,
                 allowedOvertime: false,
                 DepartmentSchedule: {
@@ -60,12 +60,11 @@ describe('Test for flexi', () => {
     });
 
     describe('POST /api/attendance/time-in', () => {
-
         it('should return error because time in is not within allowed time in frame', async () => {
             const now = new Date();
 
             // too early
-            timeIn = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 7, 0, 0);
+            timeIn = initializeHourTimeZone(new Date(2025, 8, 15, 7, 0, 0));  // get the current time 8:00 AM
 
             const res = await request(app)
                 .post('/api/attendance/time-in')
@@ -95,7 +94,7 @@ describe('Test for flexi', () => {
         it('should record time in successfully', async () => {
 
             const now = new Date();
-            timeIn = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 8, 0, 0);
+            timeIn = initializeHourTimeZone(new Date(2025, 8, 15, 8, 0, 0));  // get the current time 8:00 AM
 
             const res = await request(app)
                 .post('/api/attendance/time-in')
@@ -147,7 +146,7 @@ describe('Test for flexi', () => {
 
     describe('POST /api/attendance/time-out', () => {
         it('should record time out successfully', async () => {
-            const timeOut = new Date(timeIn.getTime() + 3600 * 9000); // 9 hours after timeIn
+            const timeOut = new Date(timeIn.getFullYear(), timeIn.getMonth(), timeIn.getDate(), 17, 0, 0); // 5:00 PM on the same day as timeIn
 
             const res = await request(app)
                 .post('/api/attendance/time-out')
@@ -155,6 +154,9 @@ describe('Test for flexi', () => {
                     employeeId,
                     timeStamp: timeOut,
                 }).expect(200);
+
+            console.log(res.body, "resw");
+
 
             const attendance = await prisma.attendance.findFirst({
                 where: {
