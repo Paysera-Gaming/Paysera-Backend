@@ -7,28 +7,29 @@ datasource Db {
   url      = env("DATABASE_URL")
 }
 
-generator dbml {
-  provider              = "prisma-dbml-generator"
-  includeRelationFields = "false"
-}
+// generator dbml {
+//   provider              = "prisma-dbml-generator"
+//   includeRelationFields = "false"
+// }
 
 model Attendance {
-  id              Int              @id @default(autoincrement())
-  employeeId      Int
-  employee        Employee         @relation(fields: [employeeId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  date            String
-  status          AttendanceStatus @default(ONGOING)
-  scheduleType    ScheduleType
-  timeIn          DateTime         @default(now()) @Db.Timestamptz()
-  timeOut         DateTime?
-  timeHoursWorked Float?
-  overTimeTotal   Float?
-  timeTotal       Float?
-  lunchTimeIn     DateTime?
-  lunchTimeOut    DateTime?
-  lunchTimeTotal  Float?
-  createdAt       DateTime         @default(now())
-  updatedAt       DateTime         @updatedAt
+  id                 Int              @id @default(autoincrement())
+  employeeId         Int
+  employee           Employee         @relation(fields: [employeeId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  date               String
+  status             AttendanceStatus @default(ONGOING)
+  scheduleType       ScheduleType
+  timeIn             DateTime         @default(now()) @Db.Timestamptz()
+  timeOut            DateTime?
+  timeHoursWorked    Float?
+  overTimeTotal      Float?
+  timeTotal          Float?
+  calculatedOverTime Boolean?         @default(false)
+  // lunchTimeIn     DateTime?
+  // lunchTimeOut    DateTime?
+  lunchTimeTotal     Float?           @default(1)
+  createdAt          DateTime         @default(now())
+  updatedAt          DateTime         @updatedAt
 
   @@index([date])
   @@index([employeeId, date])
@@ -47,12 +48,12 @@ model Schedule {
   startTimeLimit DateTime?
 
   // Overtime fields
-  limitWorkHoursDay Float? // Applies to FLEXI and SUPER_FLEXI only
+  limitWorkHoursDay Float?   @default(9) // Applies to FLEXI and SUPER_FLEXI only
   allowedOvertime   Boolean? @default(false)
 
-  lunchStartTime DateTime?
-  lunchEndTime   DateTime?
-  lunchTimeTotal Float?
+  // lunchStartTime DateTime?
+  // lunchEndTime   DateTime?
+  // lunchTimeTotal Float?
 
   // Relationships
   DepartmentSchedule DepartmentSchedule?
@@ -200,7 +201,6 @@ enum Day {
 enum AttendanceStatus {
   BREAK
   DONE
-  UNPAID_LEAVE
   PAID_LEAVE
   ONGOING
 }
