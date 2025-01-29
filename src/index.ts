@@ -84,7 +84,7 @@ app.use((req, res, next) => {
 
 if (configEnv.NODE_ENV !== 'test') {
     app.listen(port, () => {
-        console.log(`Server is running on port ${port} Origin ${configEnv.ORIGIN}`);
+        console.log(`Server is running on port 8080 http://localhost:${port} Origin ${configEnv.ORIGIN}`);
     });
 }
 // Export the server for testing
