@@ -3,7 +3,7 @@ import { customThrowError } from '../middlewares/errorHandler';
 import { validateCreateRoleSchedule } from '../validate/schedule.validation';
 import { validateUpdateRoleSchedule } from '../validate/scheduleUpdate.validation';
 import { Request, Response } from 'express';
-import { initializeDateTimeZone, initializeHourTimeZone, printDate } from '../utils/date';
+import { initializeHourTimeZone } from '../utils/date';
 import { isAfter } from 'date-fns';
 
 // GET /department-schedule
