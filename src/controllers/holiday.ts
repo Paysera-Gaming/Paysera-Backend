@@ -12,6 +12,17 @@ export const createHoliday = async (req: Request, res: Response) => {
         return customThrowError(400, 'Please provide a date and name');
     }
 
+    let findHoliday = await prisma.holiday.findFirst({
+        where: {
+            month: month.toUpperCase() as Month,
+            day: Number(day),
+        },
+    });
+
+    if (findHoliday) {
+        return customThrowError(400, 'Holiday already exists');
+    }
+
     const holiday = await prisma.holiday.create({
         data: {
             name,
