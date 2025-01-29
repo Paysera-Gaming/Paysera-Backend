@@ -1,4 +1,5 @@
 import { Schedule } from "@prisma/client";
+import { isAfter } from "date-fns";
 import { z } from "zod";
 
 function validateCreateSchedule(schedule: Schedule) {
@@ -45,8 +46,8 @@ function validateSuperFlexiSchedule(schedule: Schedule & { id: number }) {
         // lunchStartTime: z.date().optional(),
         // lunchEndTime: z.date().optional(),
     }).strict().refine((data) => {
-        if (data.startTime && data.endTime) {
-            return data.startTime < data.endTime;
+        if (isAfter(data.startTime, data.endTime)) {
+            return true;
         }
         return true;
     }, {
@@ -62,15 +63,15 @@ function validateFlexiSchedule(schedule: Schedule & { id: number }) {
         name: z.string().max(50).optional(),
         scheduleType: z.enum(["FLEXI"]),
         startTime: z.date(),
-        startTimeLimit: z.date(),
+        // startTimeLimit: z.date(),
         endTime: z.date(),
         limitWorkHoursDay: z.number().optional(),
         allowedOvertime: z.boolean().optional(),
         // lunchStartTime: z.date().optional(),
         // lunchEndTime: z.date().optional(),
     }).strict().refine((data) => {
-        if (data.startTime && data.endTime) {
-            return data.startTime < data.endTime;
+        if (isAfter(data.startTime, data.endTime)) {
+            return true;
         }
         return true;
     }, {
@@ -89,7 +90,6 @@ function validateCreateRoleSchedule(schedule: any) {
 
     const { departmentId, role, ...scheduleProps } = schedule;
 
-
     scheduleSchema.parse(schedule);
     validateCreateSchedule(scheduleProps);
 }
@@ -99,8 +99,13 @@ function validateCreatePersonalSchedule(schedule: any) {
         employeeId: z.number(),
     });
 
+    console.log(schedule, "schedule nigga");
+
+
+    const { employeeId, ...scheduleProps } = schedule;
+
     scheduleSchema.parse(schedule);
-    validateCreateSchedule(schedule);
+    validateCreateSchedule(scheduleProps);
 }
 
 export { validateCreateRoleSchedule, validateCreatePersonalSchedule };

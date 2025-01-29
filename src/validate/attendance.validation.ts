@@ -1,4 +1,5 @@
-import { Attendance, ScheduleType } from "@prisma/client";
+import { Attendance } from "@prisma/client";
+import { isAfter } from "date-fns";
 import { z } from "zod";
 
 function validateAttendance(attendance: Attendance) {
@@ -40,7 +41,7 @@ function validateCreateAttendance(attendance: any) {
         createdAt: z.date().optional(),
         updatedAt: z.date().optional(),
     }).refine(data => {
-        if (data.timeOut && data.timeIn > data.timeOut) {
+        if (data.timeOut && isAfter(data.timeIn, data.timeOut)) {
             return false;
         }
         // if (data.lunchTimeOut && data.lunchTimeIn && data.lunchTimeIn > data.lunchTimeOut) {
@@ -48,7 +49,7 @@ function validateCreateAttendance(attendance: any) {
         // }
         return true;
     }, {
-        message: "Invalid time: Ensure timeIn is before timeOut and lunchTimeIn is before lunchTimeOut.",
+        message: "Invalid time: Ensure timeIn is before timeOut.",
     });
 
     attendanceSchema.parse(attendance);
@@ -60,7 +61,6 @@ function validateUpdateAttendance(attendance: any) {
         employeeId: z.number().optional(),
         date: z.date().optional(),
         status: z.string().optional(),
-        scheduleType: z.enum(["FIXED", "SUPER_FLEXI", "FLEXI"]),
         timeIn: z.date(),
         timeOut: z.date().optional(),
         timeHoursWorked: z.number().optional(),
@@ -72,7 +72,7 @@ function validateUpdateAttendance(attendance: any) {
         createdAt: z.date().optional(),
         updatedAt: z.date().optional(),
     }).refine(data => {
-        if (data.timeOut && data.timeIn > data.timeOut) {
+        if (data.timeOut && isAfter(data.timeIn, data.timeOut)) {
             return false;
         }
         // if (data.lunchTimeOut && data.lunchTimeIn && data.lunchTimeIn > data.lunchTimeOut) {
@@ -80,7 +80,7 @@ function validateUpdateAttendance(attendance: any) {
         // }
         return true;
     }, {
-        message: "Invalid time: Ensure timeIn is before timeOut and lunchTimeIn is before lunchTimeOut.",
+        message: "Invalid time: Ensure timeIn is before timeOut.",
     });
 
     const result = attendanceSchema.parse(attendance);

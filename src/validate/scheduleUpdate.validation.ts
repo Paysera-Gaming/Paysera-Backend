@@ -1,4 +1,5 @@
 import { Schedule } from "@prisma/client";
+import { isAfter } from "date-fns";
 import { z } from "zod";
 
 function validateUpdateSchedule(schedule: Schedule) {
@@ -29,7 +30,7 @@ function validateFixedSchedule(schedule: Schedule & { id: number }) {
         // lunchStartTime: z.date().optional(),
         // lunchEndTime: z.date().optional(),
     }).strict().refine((data) => {
-        if (data.startTime && data.endTime) {
+        if (data.startTime && data.endTime && isAfter(data.startTime, data.endTime)) {
             return data.startTime < data.endTime;
         }
         return true;
@@ -52,8 +53,8 @@ function validateSuperFlexiSchedule(schedule: Schedule & { id: number }) {
         // lunchStartTime: z.date().optional(),
         // lunchEndTime: z.date().optional(),
     }).strict().refine((data) => {
-        if (data.startTime && data.endTime) {
-            return data.startTime < data.endTime;
+        if (isAfter(data.startTime, data.endTime)) {
+            return true;
         }
         return true;
     }, {
@@ -75,8 +76,8 @@ function validateFlexiSchedule(schedule: Schedule & { id: number }) {
         // lunchStartTime: z.date().optional(),
         // lunchEndTime: z.date().optional(),
     }).strict().refine((data) => {
-        if (data.startTime && data.endTime) {
-            return data.startTime < data.endTime;
+        if (isAfter(data.startTime, data.endTime)) {
+            return true;
         }
         return true;
     }, {
@@ -92,9 +93,7 @@ function validateUpdateRoleSchedule(schedule: any) {
         role: z.string(),
     });
 
-
     const { departmentId, role, ...scheduleProps } = schedule;
-
 
     scheduleSchema.parse(schedule);
     validateUpdateSchedule(scheduleProps);
@@ -105,8 +104,10 @@ function validateUpdatePersonalSchedule(schedule: any) {
         employeeId: z.number(),
     });
 
+    const { employeeId, ...scheduleProps } = schedule;
+
     scheduleSchema.parse(schedule);
-    validateUpdateSchedule(schedule);
+    validateUpdateSchedule(scheduleProps);
 }
 
 export { validateUpdateRoleSchedule, validateUpdatePersonalSchedule };
