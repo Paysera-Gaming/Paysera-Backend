@@ -37,6 +37,7 @@ const customHttpLoggerMiddleware = () => {
                 method: req.method,
                 url: req.originalUrl,
                 origin: req.headers.origin,
+                body: req.body,
             });
         });
 
