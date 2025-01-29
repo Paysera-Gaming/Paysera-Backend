@@ -603,6 +603,103 @@ paths:
           description: Invalid department schedule ID
         "404":
           description: Department schedule not found
+
+  /api/personal-schedule:
+    get:
+      summary: Get all personal schedules
+      tags:
+        - Personal Schedule
+      responses:
+        "200":
+          description: List of all personal schedules
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/PersonalSchedule"
+        "404":
+          description: No personal schedules found
+    post:
+      summary: Create a personal schedule
+      tags:
+        - Personal Schedule
+      requestBody:
+        description: Personal schedule details to create
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreatePersonalSchedule"
+      responses:
+        "201":
+          description: Personal schedule created successfully
+        "400":
+          description: Invalid input
+
+  /api/personal-schedule/{id}:
+    get:
+      summary: Get a personal schedule by ID
+      tags:
+        - Personal Schedule
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: Personal schedule ID
+      responses:
+        "200":
+          description: Personal schedule found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PersonalSchedule"
+        "400":
+          description: Invalid personal schedule ID
+        "404":
+          description: Personal schedule not found
+    put:
+      summary: Update a personal schedule
+      tags:
+        - Personal Schedule
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: Personal schedule ID
+      requestBody:
+        description: Personal schedule details to update
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdatePersonalSchedule"
+      responses:
+        "200":
+          description: Personal schedule updated successfully
+        "404":
+          description: Personal schedule not found
+    delete:
+      summary: Delete a personal schedule
+      tags:
+        - Personal Schedule
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: Personal schedule ID
+      responses:
+        "200":
+          description: Personal schedule deleted successfully
+        "404":
+          description: Personal schedule not found
+
   /api/attendance:
     get:
       summary: Get all attendance records
@@ -1091,6 +1188,8 @@ components:
           format: date-time
         status:
           $ref: "#/components/schemas/AttendanceStatus"
+        scheduleType:
+          $ref: "#/components/schemas/ScheduleType"
         timeIn:
           type: string
           format: date-time
@@ -1124,20 +1223,15 @@ components:
       properties:
         id:
           type: integer
-        description:
-          type: string
         scheduleType:
           $ref: "#/components/schemas/ScheduleType"
-        fixedStartTime:
+        startTime:
           type: string
           format: date-time
-        fixedEndTime:
+        endTime:
           type: string
           format: date-time
-        flexStartTime:
-          type: string
-          format: date-time
-        flexEndTime:
+        startTimeLimit:
           type: string
           format: date-time
         limitWorkHoursDay:
@@ -1150,10 +1244,8 @@ components:
         lunchEndTime:
           type: string
           format: date-time
-        isDepartmentSchedule:
-          type: boolean
-        isTemplateBased:
-          type: boolean
+        lunchTimeTotal:
+          type: number
         updatedAt:
           type: string
           format: date-time
@@ -1165,39 +1257,50 @@ components:
       properties:
         id:
           type: integer
-        scheduleId:
-          type: integer
         name:
           type: string
-          example: "IT Department Schedule AM"
-        departmentId:
+          example: "Department Schedule"
+        role:
+          type: string
+          example: "EMPLOYEE"
+        scheduleId:
           type: integer
         Schedule:
           $ref: "#/components/schemas/Schedule"
+        departmentId:
+          type: integer
+        Department:
+          $ref: "#/components/schemas/Department"
         updatedAt:
           type: string
           format: date-time
         createdAt:
           type: string
           format: date-time
-
-    SoloSchedule:
+    PersonalSchedule:
       type: object
       properties:
         id:
           type: integer
-        employeeId:
-          type: integer
-        Employee:
-          $ref: "#/components/schemas/Employee"
+        name:
+          type: string
+          example: "Personal Schedule"
+        day:
+          type: array
+          items:
+            $ref: "#/components/schemas/Day"
         scheduleId:
           type: integer
         Schedule:
           $ref: "#/components/schemas/Schedule"
-        updatedAt:
+        employeeId:
+          type: integer
+        Employee:
+          $ref: "#/components/schemas/Employee"
+        createdAt:
           type: string
           format: date-time
-        createdAt:
+        updatedAt:
           type: string
           format: date-time
     EmployeeCreate:
@@ -1306,7 +1409,6 @@ components:
         role:
           type: string
           example: "Programmer"
-
     CreateDepartmentSchedule:
       type: object
       properties:
@@ -1318,7 +1420,10 @@ components:
           example: 1
         scheduleType:
           type: string
-          example: FIXED
+          enum:
+            - FIXED
+            - SUPER_FLEXI
+            - FLEXI
         startTime:
           type: string
           format: date-time
@@ -1333,15 +1438,6 @@ components:
         allowedOvertime:
           type: boolean
           example: false
-        lunchStartTime:
-          type: string
-          format: date-time
-          example: 2024-09-06T12:00:00Z
-        lunchEndTime:
-          type: string
-          format: date-time
-          example: 2024-09-06T13:00:00Z
-
     UpdateDepartmentSchedule:
       type: object
       properties:
@@ -1350,7 +1446,10 @@ components:
           example: EMPLOYEE
         scheduleType:
           type: string
-          example: FIXED
+          enum:
+            - FIXED
+            - SUPER_FLEXI
+            - FLEXI
         startTime:
           type: string
           format: date-time
@@ -1365,15 +1464,74 @@ components:
         allowedOvertime:
           type: boolean
           example: false
-        lunchStartTime:
+    CreatePersonalSchedule:
+      type: object
+      properties:
+        name:
+          type: string
+          example: "Personal Schedule"
+        day:
+          type: array
+          items:
+            $ref: "#/components/schemas/Day"
+        scheduleId:
+          type: integer
+        employeeId:
+          type: integer
+        startTime:
           type: string
           format: date-time
-          example: 2024-09-06T12:00:00Z
-        lunchEndTime:
+          example: "2024-09-06T09:00:00Z"
+        endTime:
           type: string
           format: date-time
-          example: 2024-09-06T13:00:00Z
-
+          example: "2024-09-06T18:00:00Z"
+        limitWorkHoursDay:
+          type: number
+          example: 8
+        allowedOvertime:
+          type: boolean
+          example: false
+        scheduleType:
+          type: string
+          enum:
+            - FIXED
+            - SUPER_FLEXI
+            - FLEXI
+    UpdatePersonalSchedule:
+      type: object
+      properties:
+        name:
+          type: string
+          example: "Updated Personal Schedule"
+        day:
+          type: array
+          items:
+            $ref: "#/components/schemas/Day"
+        scheduleId:
+          type: integer
+        employeeId:
+          type: integer
+        startTime:
+          type: string
+          format: date-time
+          example: "2024-09-06T09:00:00Z"
+        endTime:
+          type: string
+          format: date-time
+          example: "2024-09-06T18:00:00Z"
+        limitWorkHoursDay:
+          type: number
+          example: 8
+        allowedOvertime:
+          type: boolean
+          example: false
+        scheduleType:
+          type: string
+          enum:
+            - FIXED
+            - SUPER_FLEXI
+            - FLEXI
     AttendanceCreate:
       type: object
       properties:
@@ -1386,6 +1544,10 @@ components:
           type: string
         scheduleType:
           type: string
+          enum:
+            - FIXED
+            - SUPER_FLEXI
+            - FLEXI
         timeIn:
           type: string
           format: date-time
@@ -1400,7 +1562,6 @@ components:
           format: date-time
         overtimeTotal:
           type: number
-
     Announcement:
       type: object
       properties:
@@ -1408,7 +1569,7 @@ components:
           type: integer
         title:
           type: string
-        content:
+        body:
           type: string
         createdAt:
           type: string
@@ -1416,15 +1577,13 @@ components:
         updatedAt:
           type: string
           format: date-time
-
     AnnouncementInput:
       type: object
       properties:
         title:
           type: string
-        content:
+        body:
           type: string
-
     Holiday:
       type: object
       properties:
@@ -1435,14 +1594,13 @@ components:
         month:
           type: string
         day:
-          type: number
+          type: integer
         createdAt:
           type: string
           format: date-time
         updatedAt:
           type: string
           format: date-time
-
     HolidayInput:
       type: object
       properties:
@@ -1451,8 +1609,7 @@ components:
         month:
           type: string
         day:
-          type: number
-
+          type: integer
     AttendanceUpdate:
       type: object
       properties:
@@ -1460,6 +1617,10 @@ components:
           type: string
         scheduleType:
           type: string
+          enum:
+            - FIXED
+            - SUPER_FLEXI
+            - FLEXI
         timeIn:
           type: string
           format: date-time
@@ -1480,14 +1641,12 @@ components:
         - ADMIN
         - TEAM_LEADER
         - EMPLOYEE
-
     ScheduleType:
       type: string
       enum:
         - FIXED
         - SUPER_FLEXI
         - FLEXI
-
     Day:
       type: string
       enum:
@@ -1498,12 +1657,26 @@ components:
         - FRIDAY
         - SATURDAY
         - SUNDAY
-
     AttendanceStatus:
       type: string
       enum:
         - BREAK
         - DONE
         - UNPAID_LEAVE
-        - PAID_TIME_OFF
+        - PAID_LEAVE
         - ONGOING
+    Month:
+      type: string
+      enum:
+        - JANUARY
+        - FEBRUARY
+        - MARCH
+        - APRIL
+        - MAY
+        - JUNE
+        - JULY
+        - AUGUST
+        - SEPTEMBER
+        - OCTOBER
+        - NOVEMBER
+        - DECEMBER
