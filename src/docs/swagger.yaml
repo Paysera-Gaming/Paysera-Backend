@@ -1432,12 +1432,12 @@ components:
           type: string
           format: date-time
           example: 2024-09-06T18:00:00Z
-        limitWorkHoursDay:
-          type: number
-          example: 8
-        allowedOvertime:
-          type: boolean
-          example: false
+        # limitWorkHoursDay:
+        #   type: number
+        #   example: 8
+        # allowedOvertime:
+        #   type: boolean
+        #   example: false
     UpdateDepartmentSchedule:
       type: object
       properties:
@@ -1458,12 +1458,12 @@ components:
           type: string
           format: date-time
           example: 2024-09-06T18:00:00Z
-        limitWorkHoursDay:
-          type: number
-          example: 8
-        allowedOvertime:
-          type: boolean
-          example: false
+        # limitWorkHoursDay:
+        #   type: number
+        #   example: 8
+        # allowedOvertime:
+        #   type: boolean
+        #   example: false
     CreatePersonalSchedule:
       type: object
       properties:
@@ -1486,12 +1486,12 @@ components:
           type: string
           format: date-time
           example: "2024-09-06T18:00:00Z"
-        limitWorkHoursDay:
-          type: number
-          example: 8
-        allowedOvertime:
-          type: boolean
-          example: false
+        # limitWorkHoursDay:
+        #   type: number
+        #   example: 8
+        # allowedOvertime:
+        #   type: boolean
+        #   example: false
         scheduleType:
           type: string
           enum:
@@ -1520,12 +1520,12 @@ components:
           type: string
           format: date-time
           example: "2024-09-06T18:00:00Z"
-        limitWorkHoursDay:
-          type: number
-          example: 8
-        allowedOvertime:
-          type: boolean
-          example: false
+        # limitWorkHoursDay:
+        #   type: number
+        #   example: 8
+        # allowedOvertime:
+        #   type: boolean
+        #   example: false
         scheduleType:
           type: string
           enum:
@@ -1554,12 +1554,14 @@ components:
         timeOut:
           type: string
           format: date-time
-        lunchTimeIn:
-          type: string
-          format: date-time
-        lunchTimeOut:
-          type: string
-          format: date-time
+        allowedOvertime:
+          type: boolean
+        # lunchTimeIn:
+        #   type: string
+        #   format: date-time
+        # lunchTimeOut:
+        #   type: string
+        #   format: date-time
         overtimeTotal:
           type: number
     Announcement:
@@ -1627,12 +1629,12 @@ components:
         timeOut:
           type: string
           format: date-time
-        lunchTimeIn:
-          type: string
-          format: date-time
-        lunchTimeOut:
-          type: string
-          format: date-time
+        # lunchTimeIn:
+        #   type: string
+        #   format: date-time
+        # lunchTimeOut:
+        #   type: string
+        #   format: date-time
         overtimeTotal:
           type: number
     AccessLevel:
