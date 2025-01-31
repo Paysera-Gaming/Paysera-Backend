@@ -13,23 +13,23 @@ datasource Db {
 // }
 
 model Attendance {
-  id                 Int              @id @default(autoincrement())
-  employeeId         Int
-  employee           Employee         @relation(fields: [employeeId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  date               String
-  status             AttendanceStatus @default(ONGOING)
-  scheduleType       ScheduleType
-  timeIn             DateTime         @default(now()) @Db.Timestamptz()
-  timeOut            DateTime?
-  timeHoursWorked    Float?
-  overTimeTotal      Float?
-  timeTotal          Float?
-  calculatedOverTime Boolean?         @default(false)
+  id              Int              @id @default(autoincrement())
+  employeeId      Int
+  employee        Employee         @relation(fields: [employeeId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  date            String
+  status          AttendanceStatus @default(ONGOING)
+  scheduleType    ScheduleType
+  timeIn          DateTime         @default(now()) @Db.Timestamptz()
+  timeOut         DateTime?
+  timeHoursWorked Float?
+  overTimeTotal   Float?
+  timeTotal       Float?
+  allowedOvertime Boolean?         @default(false)
   // lunchTimeIn     DateTime?
   // lunchTimeOut    DateTime?
-  lunchTimeTotal     Float?           @default(1)
-  createdAt          DateTime         @default(now())
-  updatedAt          DateTime         @updatedAt
+  lunchTimeTotal  Float?           @default(1)
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
 
   @@index([date])
   @@index([employeeId, date])
@@ -48,8 +48,9 @@ model Schedule {
   startTimeLimit DateTime?
 
   // Overtime fields
-  limitWorkHoursDay Float?   @default(9) // Applies to FLEXI and SUPER_FLEXI only
-  allowedOvertime   Boolean? @default(false)
+  // limitWorkHoursDay Float?   @default(9)
+  // Applies to FLEXI and SUPER_FLEXI only
+  // allowedOvertime   Boolean? @default(false)
 
   // lunchStartTime DateTime?
   // lunchEndTime   DateTime?
@@ -131,7 +132,6 @@ model Department {
   Leader             Employee?            @relation("DepartmentLeader", fields: [leaderId], references: [id], onDelete: SetNull, onUpdate: Cascade)
   DepartmentSchedule DepartmentSchedule[]
   Employees          Employee[]           @relation("DepartmentEmployees")
-  // departmentAnnouncement DepartmentAnnouncement? @relation("DepartmentAnnouncement")
 
   updatedAt DateTime @updatedAt
   createdAt DateTime @default(now())
