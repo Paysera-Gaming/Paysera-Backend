@@ -3,7 +3,7 @@ import { Request, Response } from 'express';
 import { prisma } from '../config/database';
 import { customThrowError } from '../middlewares/errorHandler';
 import { initializeDateTimeZone, initializeHourTimeZone, printDate, returnFormatDate } from '../utils/date';
-import { Month } from '@prisma/client';
+import { Day, Month } from '@prisma/client';
 import { TZDate } from '@date-fns/tz';
 
 const timeZone = 'Asia/Manila';
@@ -80,6 +80,14 @@ async function timeIn(req: Request, res: Response) {
     const currentDay = format(initializeDateTimeZone(body.timeIn), 'EEEE');
     if (isDepartmentSchedule && (currentDay === 'Saturday' || currentDay === 'Sunday')) {
         return customThrowError(400, 'Weekend not allowed to time in');
+    } else {
+        // Check if the day is included in the employee's personal schedule
+        const listOfDays = currentEmployee.PersonalSchedule?.day as Day[];
+        if (listOfDays) {
+            if (!listOfDays.includes(currentDay as Day)) {
+                return customThrowError(400, 'Day not allowed to time in');
+            }
+        }
     }
 
     // Check if the employee has already clocked in today
@@ -133,7 +141,6 @@ async function timeIn(req: Request, res: Response) {
         });
 
         return res.status(200).send('Attendance record updated clock in again');
-
         // return customThrowError(400, 'Already clocked in');
     } else {
         let effectiveTimeIn = timeIn;
@@ -275,34 +282,34 @@ async function timeOut(req: Request, res: Response) {
         }
     }
 
-    // Fixed schedule: Adjust total hours and prevent overtime if not allowed
-    if (schedule.scheduleType === 'FIXED') {
-        if (isAfter(timeOutFixed, scheduleEndTime)) {
-            if (schedule.allowedOvertime) {
-                const overtimeMinutes = differenceInMinutes(timeOutFixed, scheduleEndTime);
-                overtimeTotal = overtimeMinutes / 60;
-            } else {
-                body.timeOut = scheduleEndTime;
-                totalHoursWorked = 8;
-            }
-        }
-    }
+    // // Fixed schedule: Adjust total hours and prevent overtime if not allowed
+    // if (schedule.scheduleType === 'FIXED') {
+    //     if (isAfter(timeOutFixed, scheduleEndTime)) {
+    //         if (schedule.allowedOvertime) {
+    //             const overtimeMinutes = differenceInMinutes(timeOutFixed, scheduleEndTime);
+    //             overtimeTotal = overtimeMinutes / 60;
+    //         } else {
+    //             body.timeOut = scheduleEndTime;
+    //             totalHoursWorked = 8;
+    //         }
+    //     }
+    // }
 
     // Flexi AND Super-Flexi schedule: Calculate overtime if total hours worked exceeds 8 hours
-    if (schedule.scheduleType === 'FLEXI' || schedule.scheduleType === 'SUPER_FLEXI') {
-        if (totalHoursWorked > 8) {
-            const timeAfterEightHours = set(timeInFixed, {
-                hours: getHours(timeInFixed) + 8,
-                minutes: getMinutes(timeInFixed),
-                seconds: 0,
-                milliseconds: 0,
-            });
+    // if (schedule.scheduleType === 'FLEXI' || schedule.scheduleType === 'SUPER_FLEXI') {
+    if (totalHoursWorked > 8) {
+        const timeAfterEightHours = set(timeInFixed, {
+            hours: getHours(timeInFixed) + 8,
+            minutes: getMinutes(timeInFixed),
+            seconds: 0,
+            milliseconds: 0,
+        });
 
-            const overtimeMinutes = differenceInMinutes(timeOutFixed, timeAfterEightHours);
-            overtimeTotal = overtimeMinutes / 60;
-            totalHoursWorked = 8;
-        }
+        const overtimeMinutes = differenceInMinutes(timeOutFixed, timeAfterEightHours);
+        overtimeTotal = overtimeMinutes / 60;
+        totalHoursWorked = 8;
     }
+    // }
 
     console.log(returnFormatDate(currentAttendance.timeIn), returnFormatDate(timeInFixed));
     console.log(returnFormatDate(timeOutFixed), returnFormatDate(body.timeOut));
