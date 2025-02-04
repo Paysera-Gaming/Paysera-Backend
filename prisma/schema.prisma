@@ -25,6 +25,7 @@ model Attendance {
   overTimeTotal   Float?
   timeTotal       Float?
   allowedOvertime Boolean?         @default(false)
+  limitOvertime   Float?           @default(4)
   // lunchTimeIn     DateTime?
   // lunchTimeOut    DateTime?
   lunchTimeTotal  Float?           @default(1)
@@ -102,6 +103,7 @@ model PersonalSchedule {
 model Employee {
   id                  Int         @id @default(autoincrement())
   username            String      @unique
+  email               String      @unique
   accessLevel         AccessLevel
   isActive            Boolean     @default(false)
   passwordCredentials String      @Db.Text
