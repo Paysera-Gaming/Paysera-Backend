@@ -17,6 +17,8 @@ const envSchema = z.object({
     SALT_ROUNDS: z.string().regex(/^\d+$/).transform(Number),
     ACCOUNT_USERNAME: z.string(),
     ACCOUNT_PASSWORD: z.string(),
+    EMAIL_USERNAME: z.string(),
+    EMAIL_PASSWORD: z.string(),
 });
 
 // Parse and validate the environment variables
