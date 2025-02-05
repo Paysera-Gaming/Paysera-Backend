@@ -3,7 +3,6 @@ import app from '..'; // Adjust the path to your Express app
 import { prisma } from '../config/database';
 import { formatDate } from 'date-fns';
 import { initializeHourTimeZone } from '../utils/date';
-import { addHours } from 'date-fns';
 
 describe('Test for flexi', () => {
     let employeeId: number;
@@ -30,8 +29,6 @@ describe('Test for flexi', () => {
                 startTime: new Date(2020, 8, 15, 8, 0, 0),  // 8:00 AM
                 startTimeLimit: new Date(2020, 8, 15, 10, 0, 0),   // 10:00 AM
                 endTime: new Date(2020, 8, 15, 17, 0, 0),   // 5:00 PM
-                limitWorkHoursDay: 9,
-                allowedOvertime: false,
                 DepartmentSchedule: {
                     create: {
                         departmentId,
@@ -46,6 +43,7 @@ describe('Test for flexi', () => {
         // Create an employee and set a time-in record to use in tests
         const employee = await prisma.employee.create({
             data: {
+                email: "employeeFlex@gmail.com",
                 role: 'Programmer',
                 departmentId,
                 username: 'FlexiClock',
