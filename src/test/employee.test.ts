@@ -32,6 +32,7 @@ describe('Employee Routes', () => {
     describe('POST employee', () => {
         it('should create a new employee', async () => {
             const employee: Prisma.EmployeeCreateInput = {
+                email: 'randomCreate@gmail.com',
                 firstName: 'SampleCreate',
                 lastName: 'SampleCreate',
                 middleName: 'SampleCreate',
@@ -55,6 +56,7 @@ describe('Employee Routes', () => {
 
     describe('PUT employee', () => {
         const employeeUpdateSample = {
+            email: "emailPut@gmail.com",
             username: 'SampleUpdate',
             firstName: 'SampleUpdate',
             lastName: 'SampleUpdate',

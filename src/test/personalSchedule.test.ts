@@ -19,8 +19,6 @@ describe('Personal Schedule API', () => {
                 scheduleType: "FIXED",
                 startTime: new Date(2024, 8, 1, 9, 0, 0),
                 endTime: new Date(2024, 8, 1, 17, 0, 0),
-                limitWorkHoursDay: 8,
-                allowedOvertime: false,
             },
         });
 
