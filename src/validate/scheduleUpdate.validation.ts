@@ -23,8 +23,8 @@ function validateFixedSchedule(schedule: Schedule & { id: number }) {
     const scheduleSchema = z.object({
         name: z.string().max(50).optional(),
         scheduleType: z.enum(["FIXED"]).optional(),
-        startTime: z.date().optional(),
-        endTime: z.date().optional(),
+        startTime: z.date(),
+        endTime: z.date(),
         limitWorkHoursDay: z.number().optional(),
         allowedOvertime: z.boolean().optional(),
         // lunchStartTime: z.date().optional(),
@@ -71,8 +71,8 @@ function validateFlexiSchedule(schedule: Schedule & { id: number }) {
         scheduleType: z.enum(["FLEXI"]),
         startTime: z.date(),
         endTime: z.date(),
-        limitWorkHoursDay: z.number().optional(),
-        allowedOvertime: z.boolean().optional(),
+        // limitWorkHoursDay: z.number().optional(),
+        // allowedOvertime: z.boolean().optional(),
         // lunchStartTime: z.date().optional(),
         // lunchEndTime: z.date().optional(),
     }).strict().refine((data) => {
