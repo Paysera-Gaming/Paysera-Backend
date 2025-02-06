@@ -2,9 +2,10 @@ import { Request, Response } from 'express';
 import { prisma } from '../config/database';
 import { validateCreateAttendance, validateUpdateAttendance } from '../validate/attendance.validation';
 import { customThrowError } from '../middlewares/errorHandler';
-import { formatDate } from '../utils/time';
-import { parseISO, format, differenceInHours, differenceInMinutes, isAfter, set, getHours, getMinutes, getSeconds } from 'date-fns';
-import { initializeDateTimeZone, initializeHourTimeZone } from '../utils/date';
+import { parseISO, format, differenceInMinutes, isAfter, set, getHours, getMinutes, getSeconds } from 'date-fns';
+import { initializeDateTimeZone } from '../utils/date';
+
+const DEFAULT_OVERTIME_LIMIT = 4;
 
 async function getAllAttendance(req: Request, res: Response) {
     const allAttendance = await prisma.attendance.findMany({
@@ -172,17 +173,9 @@ async function updateAttendance(req: Request, res: Response) {
         return customThrowError(404, 'Attendance record not found');
     }
 
-
     // calculate total hours worked
     let totalHours = differenceInMinutes(body.timeOut, body.timeIn);
-
-    // lunch default to 1 hour
     let totalHoursWorked = totalHours / 60;
-    // Subtract lunch time from total working hours
-    let totalMinutesWithLunchMinus = totalHoursWorked;
-    if (totalMinutesWithLunchMinus > 60) {
-        totalMinutesWithLunchMinus -= 60;
-    }
     let overtimeTotal = 0;
 
     // calculate overtime
@@ -199,6 +192,18 @@ async function updateAttendance(req: Request, res: Response) {
         totalHoursWorked = 8;
     }
 
+    if (currentAttendance.isAllowedOvertime) {
+        const totalMinutesWorked = differenceInMinutes(body.timeOut, body.timeIn);
+        const totalMinutesWithLunchMinus = totalMinutesWorked > 60 ? totalMinutesWorked - 60 : totalMinutesWorked;
+        totalHoursWorked = totalMinutesWithLunchMinus / 60;
+
+        // calculate overtime
+        overtimeTotal = totalHoursWorked > 8 ? totalHoursWorked - 8 : 0;
+
+        // limit overtime to 4 hours
+        overtimeTotal = Math.min(overtimeTotal, currentAttendance.limitOvertime || DEFAULT_OVERTIME_LIMIT);
+    }
+
     await prisma.attendance.update({
         where: { id: attendanceId },
         data: {
@@ -206,7 +211,7 @@ async function updateAttendance(req: Request, res: Response) {
             status: body.status ?? currentAttendance.status,
             timeOut: body.timeOut ?? currentAttendance.timeOut,
             timeIn: body.timeIn ?? currentAttendance.timeIn,
-            timeTotal: totalHours / 60 || currentAttendance.timeTotal,
+            timeTotal: totalHoursWorked || currentAttendance.timeTotal,
             overTimeTotal: overtimeTotal ?? currentAttendance.overTimeTotal,
             timeHoursWorked: totalHoursWorked || currentAttendance.timeHoursWorked,
             // lunchTimeIn: body.lunchTimeIn ?? existingAttendance.lunchTimeIn,
