@@ -5,6 +5,7 @@ import { prisma } from '../config/database';
 import { validateLogin } from '../validate/auth.validation';
 import { customThrowError } from '../middlewares/errorHandler';
 import { configEnv } from '../config/dotenv';
+import nodemailer from 'nodemailer';
 
 const JWT_SECRET = configEnv.JWT_SECRET;
 const JWT_EXPIRATION = '12h';
@@ -162,30 +163,126 @@ const getUserInfo = async (req: Request, res: Response) => {
 
 
         // this can be extend if we going to add another schedule type
-        let currentSchedule;
+        let departmentSchedule;
         if (department && employee.role && employee.departmentId) {
-            currentSchedule = await prisma.departmentSchedule.findFirst({
+            departmentSchedule = await prisma.departmentSchedule.findFirst({
                 where: {
                     departmentId: employee.departmentId,
                     role: employee.role,
                 },
                 select: {
+                    name: true,
+                    role: true,
                     Schedule: true,
                 },
             });
 
-            currentSchedule = { ...currentSchedule, ...currentSchedule?.Schedule };
+            departmentSchedule = { ...departmentSchedule, ...departmentSchedule?.Schedule };
         }
 
-        res.status(200).send({ ...employee, departmentName: department?.name || 'N/A', schedule: currentSchedule || 'No schedule' });
+        const personalSchedule = await prisma.personalSchedule.findFirst({
+            where: {
+                employeeId: employee.id,
+            },
+            select: {
+                day: true,
+                name: true,
+                Schedule: true,
+            },
+        });
+
+        console.log({ ...employee, departmentName: department?.name || 'N/A', departmentSchedule, personalSchedule });
+
+
+        res.status(200).send({ ...employee, departmentName: department?.name || 'N/A', departmentSchedule, personalSchedule });
     } catch (error) {
         return customThrowError(401, "Invalid token");
     }
 };
+
+
+async function sendForgetPasswordEmail(req: Request, res: Response) {
+    const { email } = req.body;
+
+    const user = await prisma.employee.findFirst({
+        where: { email: email.trim() },
+    });
+
+    if (!user) {
+        return customThrowError(404, "User not found");
+    }
+
+    const forgetPasswordToken = jwt.sign(
+        {
+            id: user.id,
+        },
+        JWT_SECRET,
+        { expiresIn: '1h' }
+    );
+
+    const resetPasswordUrl = `${configEnv.ORIGIN}/reset-password?token=${forgetPasswordToken}`;
+
+    console.log({
+        user: configEnv.EMAIL_USERNAME,
+        pass: configEnv.EMAIL_PASSWORD,
+    });
+
+    const transporter = nodemailer.createTransport({
+        service: 'gmail',
+        auth: {
+            user: configEnv.EMAIL_USERNAME,
+            pass: configEnv.EMAIL_PASSWORD,
+        },
+    });
+
+    const mailOptions = {
+        from: configEnv.EMAIL_USERNAME,
+        to: email,
+        subject: 'Paysera Password Reset',
+        text: `You requested a password reset. Use the following link to reset your password: ${resetPasswordUrl}`,
+    };
+
+    transporter.sendMail(mailOptions, (error, info) => {
+        if (error) {
+            console.log(error, info, "error sending email");
+
+            return customThrowError(500, "Error sending email");
+        } else {
+            res.status(200).send("Password reset email sent");
+        }
+    });
+}
+
+async function resetPassword(req: Request, res: Response) {
+    const { token } = req.params;
+    const password: string = req.body.password;
+
+    if (!token || !password) {
+        return customThrowError(400, "Token and password are required");
+    }
+
+    try {
+        const decoded = jwt.verify(token, JWT_SECRET) as { id: number };
+        const hashedPassword = await bcrypt.hash(password.trim(), 10);
+
+        await prisma.employee.update({
+            where: { id: decoded.id },
+            data: {
+                passwordCredentials: hashedPassword,
+            },
+        });
+
+        res.status(200).send("Password reset successful");
+    } catch (error) {
+        return customThrowError(401, "Invalid token");
+    }
+}
 
 export {
     login,
     refreshToken,
     logout,
     getUserInfo,
+    sendForgetPasswordEmail,
+    resetPassword
 };
