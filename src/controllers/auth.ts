@@ -209,7 +209,7 @@ async function sendForgetPasswordEmail(req: Request, res: Response) {
     });
 
     if (!user) {
-        return customThrowError(404, "User not found");
+        return customThrowError(404, "Email not exists");
     }
 
     const forgetPasswordToken = jwt.sign(
@@ -254,15 +254,18 @@ async function sendForgetPasswordEmail(req: Request, res: Response) {
 }
 
 async function resetPassword(req: Request, res: Response) {
-    const { token } = req.params;
+    const { id } = req.params;
     const password: string = req.body.password;
 
-    if (!token || !password) {
+    console.log(req.body, req.params, req.query);
+
+
+    if (!id || !password) {
         return customThrowError(400, "Token and password are required");
     }
 
     try {
-        const decoded = jwt.verify(token, JWT_SECRET) as { id: number };
+        const decoded = jwt.verify(id, JWT_SECRET) as { id: number };
         const hashedPassword = await bcrypt.hash(password.trim(), 10);
 
         await prisma.employee.update({
