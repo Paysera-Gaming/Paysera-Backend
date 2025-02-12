@@ -22,9 +22,29 @@ import routerDepartmentSchedule from './routes/departmentSchedule.routes';
 import routerPersonalSchedule from './routes/personalSchedule.routes';
 import { httpLoggerMiddleware } from './middlewares/logger';
 import routerAnnouncement from './routes/announcement.routes';
+import { Server } from "socket.io";
 
 const app = express();
 const port = configEnv.PORT || 3000;
+// Export the server for testing
+const server = http.createServer(app);
+
+const io = new Server(server, {
+    cors: {
+        origin: [configEnv.ORIGIN, 'https://x3lkcvjr-5173.asse.devtunnels.ms', 'https://x3lkcvjr-5173.asse.devtunnels.ms'],  // Allow your React app to connect
+        methods: ['GET', 'POST'],
+    },
+})
+
+// Socket.IO connection
+io.on('connection', (socket) => {
+    console.log('New client connected:', socket.id);
+
+    socket.on('disconnect', () => {
+        console.log('Client disconnected:', socket.id);
+    });
+});
+
 
 if (process.env.NODE_ENV === 'production') {
     app.set('trust proxy', 1); // Trust first proxy in production
@@ -42,11 +62,11 @@ const limiter = rateLimit({
 app.use(limiter); // Rate limiting
 app.use(cookieParser()); // Parse cookies
 app.use(cors({
-    origin: [configEnv.ORIGIN, "https://paysera-timekeeping-gngmv.ondigitalocean.app"], // Reflect the request origin
+    origin: [configEnv.ORIGIN, 'https://x3lkcvjr-5173.asse.devtunnels.ms'], // Reflect the request origin
     credentials: true, // Allow sending cookies
 })); // Enable CORS
 app.options('*', cors({
-    origin: [configEnv.ORIGIN, "https://paysera-timekeeping-gngmv.ondigitalocean.app"], // Reflect the request origin
+    origin: [configEnv.ORIGIN, 'https://x3lkcvjr-5173.asse.devtunnels.ms'], // Reflect the request origin
     credentials: true, // Allow sending cookies
 })); // Handle preflight requests
 app.use(httpLoggerMiddleware);
@@ -83,12 +103,10 @@ app.use((req, res, next) => {
 });
 
 if (configEnv.NODE_ENV !== 'test') {
-    app.listen(port, () => {
+    server.listen(port, () => {
         console.log(`Server is running on port 8080 http://localhost:${port} Origin ${configEnv.ORIGIN}`);
     });
 }
-// Export the server for testing
-const server = http.createServer(app);
-export { server };
 
+export { server, io };
 export default app;
