@@ -32,14 +32,14 @@ const regularMiddleware = async (req: Request, res: Response, next: NextFunction
             where: { id: Number(decoded.id) },
         });
 
-        if (!employee) return res.status(404).send('Employee not found');
+        if (!employee) return res.status(403).send('Employee not found');
 
         req.body.data = employee;
 
         next();
     } catch (err: any) {
         if (err.name === 'TokenExpiredError') {
-            return res.status(401).send('Token expired');
+            return res.status(403).send('Token expired');
         }
         return res.status(403).send('Invalid Token');
     }

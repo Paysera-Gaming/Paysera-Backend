@@ -43,7 +43,7 @@ const teamLeaderMiddleware = async (req: Request, res: Response, next: NextFunct
 
     } catch (err: any) {
         if (err.name === 'TokenExpiredError') {
-            return res.status(401).send('Token expired');
+            return res.status(403).send('Token expired');
         }
         return res.status(403).send('Invalid Token');
     }

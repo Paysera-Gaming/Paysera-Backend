@@ -32,7 +32,7 @@ const adminMiddleware = async (req: Request, res: Response, next: NextFunction) 
             where: { id: Number(decoded.id) },
         });
 
-        if (!employee) return res.status(404).send('Admin not found');
+        if (!employee) return res.status(403).send('Admin not found');
 
         if (employee.accessLevel !== 'ADMIN') {
             return res.status(403).send('Access forbidden');
@@ -42,7 +42,7 @@ const adminMiddleware = async (req: Request, res: Response, next: NextFunction) 
         next();
     } catch (err: any) {
         if (err.name === 'TokenExpiredError') {
-            return res.status(401).send('Token expired');
+            return res.status(403).send('Token expired');
         }
         return res.status(403).send('Invalid Token');
     }
