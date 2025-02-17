@@ -3,6 +3,7 @@ import { prisma } from "../config/database";
 import { validateCreateDepartment, validateDepartmentAssignEmployee, validateDepartmentAssignLeader, validateDepartmentRemoveEmployee, validateUpdateDepartment } from "../validate/department.validation";
 import { customThrowError } from '../middlewares/errorHandler';
 import { initializeHourTimeZone } from "../utils/date";
+import { io } from "..";
 
 async function getAllDepartments(req: Request, res: Response) {
     const allDepartments = await prisma.department.findMany({
@@ -159,6 +160,7 @@ async function createDepartment(req: Request, res: Response) {
         },
     });
 
+    io.emit("department");
     res.status(201).send("Department created successfully");
 }
 
@@ -197,6 +199,7 @@ async function updateDepartmentById(req: Request, res: Response) {
         },
     });
 
+    io.emit("department");
     res.status(200).send("Department updated successfully");
 }
 
@@ -235,6 +238,7 @@ async function deleteDepartmentById(req: Request, res: Response) {
         })
     ]);
 
+    io.emit("department");
     res.status(200).send("Department deleted successfully");
 }
 
@@ -395,6 +399,7 @@ async function updateDepartmentAssignEmployee(req: Request, res: Response) {
         }
     });
 
+    io.emit('department');
     res.status(200).send("Employee assigned to department successfully");
 }
 
@@ -434,7 +439,8 @@ async function updateDepartmentRemoveEmployee(req: Request, res: Response) {
         }
     });
 
-    res.status(200).send("fuck removed from department successfully");
+    io.emit('department');
+    res.status(200).send("Employee removed from department successfully");
 }
 
 async function updateDepartmentAssignLeader(req: Request, res: Response) {
@@ -479,6 +485,7 @@ async function updateDepartmentAssignLeader(req: Request, res: Response) {
         }
     });
 
+    io.emit('department');
     res.status(200).send("Leader assigned to department successfully");
 }
 
@@ -518,6 +525,7 @@ async function updateDepartmentRemoveLeader(req: Request, res: Response) {
         }
     });
 
+    io.emit('department');
     res.status(200).send("Leader removed from department successfully");
 }
 
