@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import { prisma } from '../config/database';
+import { io } from '../index';
 
 const getAnnouncements = async (req: Request, res: Response) => {
     const announcements = await prisma.announcement.findMany();
@@ -31,6 +32,7 @@ const createAnnouncement = async (req: Request, res: Response) => {
         data: { title, body },
     });
 
+    io.emit('announcements');
     return res.status(201).send(newAnnouncement);
 };
 
@@ -59,6 +61,7 @@ const updateAnnouncement = async (req: Request, res: Response) => {
         data: { title, body },
     });
 
+    io.emit('announcements');
     return res.send(updatedAnnouncement);
 };
 
@@ -76,6 +79,8 @@ const deleteAnnouncement = async (req: Request, res: Response) => {
     await prisma.announcement.delete({
         where: { id: Number(id) },
     });
+
+    io.emit('announcements');
     return res.status(204).send("Announcement deleted successfully");
 };
 
