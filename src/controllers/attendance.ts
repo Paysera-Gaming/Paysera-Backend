@@ -4,6 +4,7 @@ import { validateCreateAttendance, validateUpdateAttendance } from '../validate/
 import { customThrowError } from '../middlewares/errorHandler';
 import { parseISO, format, differenceInMinutes, isAfter, set, getHours, getMinutes, getSeconds } from 'date-fns';
 import { initializeDateTimeZone } from '../utils/date';
+import { io } from '../index';
 
 const DEFAULT_OVERTIME_LIMIT = 4;
 
@@ -145,6 +146,7 @@ async function createAttendance(req: Request, res: Response) {
         },
     });
 
+    io.emit('attendance');
     res.status(201).send("Attendance record created successfully");
 }
 
@@ -219,6 +221,7 @@ async function updateAttendance(req: Request, res: Response) {
         },
     });
 
+    io.emit('attendance');
     res.status(200).send("Attendance record updated successfully");
 }
 
@@ -247,11 +250,11 @@ async function updateAttendanceByEmployeeId(req: Request, res: Response) {
     let totalHoursWorked = 0;
     let totalLunchHours = 1;
 
-    // if (req.body.timeOut && req.body.lunchTimeOut) {
-    //     totalHours = (req.body.timeOut.getTime() - req.body.timeIn.getTime()) / 1000 / 60 / 60;
-    //     totalLunchHours = (req.body.lunchTimeOut.getTime() - req.body.lunchTimeIn.getTime()) / 1000 / 60 / 60;
-    //     totalHoursWorked = totalHours - totalLunchHours;
-    // }
+    if (req.body.timeOut && req.body.lunchTimeOut) {
+        totalHours = (req.body.timeOut.getTime() - req.body.timeIn.getTime()) / 1000 / 60 / 60;
+        totalLunchHours = (req.body.lunchTimeOut.getTime() - req.body.lunchTimeIn.getTime()) / 1000 / 60 / 60;
+        totalHoursWorked = totalHours - totalLunchHours;
+    }
 
     await prisma.attendance.update({
         where: {
@@ -269,6 +272,7 @@ async function updateAttendanceByEmployeeId(req: Request, res: Response) {
         },
     });
 
+    io.emit('attendance');
     res.status(200).send("Attendance record updated successfully");
 }
 
@@ -291,6 +295,7 @@ async function deleteAttendance(req: Request, res: Response) {
         where: { id: attendanceId },
     });
 
+    io.emit('attendance');
     res.status(200).send("Attendance record deleted successfully");
 }
 
