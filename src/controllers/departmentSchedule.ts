@@ -5,6 +5,7 @@ import { validateUpdateRoleSchedule } from '../validate/scheduleUpdate.validatio
 import { Request, Response } from 'express';
 import { initializeHourTimeZone } from '../utils/date';
 import { isAfter } from 'date-fns';
+import { io } from '..';
 
 // GET /department-schedule
 async function getAllDepartmentSchedules(req: Request, res: Response) {
@@ -82,7 +83,7 @@ async function createDepartmentSchedule(req: Request, res: Response) {
         startTime: startTime,
         endTime: endTime,
         // limitWorkHoursDay: req.body.limitWorkHoursDay,
-        allowedOvertime: req.body.allowedOvertime,
+        // allowedOvertime: req.body.allowedOvertime,
         // lunchStartTime: lunchStartTime,
         // lunchEndTime: lunchEndTime,
     })
@@ -94,8 +95,8 @@ async function createDepartmentSchedule(req: Request, res: Response) {
             scheduleType: req.body.scheduleType,
             startTime: startTime,
             endTime: endTime,
-            limitWorkHoursDay: req.body.limitWorkHoursDay,
-            allowedOvertime: req.body.allowedOvertime,
+            // limitWorkHoursDay: req.body.limitWorkHoursDay,
+            // allowedOvertime: req.body.allowedOvertime,
             // lunchStartTime: lunchStartTime,
             // lunchEndTime: lunchEndTime,
         },
@@ -110,6 +111,7 @@ async function createDepartmentSchedule(req: Request, res: Response) {
         },
     });
 
+    io.emit('departmentSchedule');
     res.status(201).send(departmentSchedule);
 }
 
@@ -130,8 +132,8 @@ async function updateDepartmentSchedule(req: Request, res: Response) {
         scheduleType: req.body.scheduleType,
         startTime: startTime,
         endTime: endTime,
-        limitWorkHoursDay: req.body.limitWorkHoursDay,
-        allowedOvertime: req.body.allowedOvertime,
+        // limitWorkHoursDay: req.body.limitWorkHoursDay,
+        // allowedOvertime: req.body.allowedOvertime,
         // lunchStartTime: toZonedTime(req.body.lunchStartTime),
         // lunchEndTime: toZonedTime(req.body.lunchEndTime),
     };
@@ -169,8 +171,8 @@ async function updateDepartmentSchedule(req: Request, res: Response) {
                     scheduleType: body.scheduleType ?? schedule.scheduleType,
                     startTime: body.startTime ?? schedule.startTime,
                     endTime: body.endTime ?? schedule.endTime,
-                    limitWorkHoursDay: body.limitWorkHoursDay ?? schedule.limitWorkHoursDay,
-                    allowedOvertime: body.allowedOvertime ?? schedule.allowedOvertime,
+                    // limitWorkHoursDay: body.limitWorkHoursDay ?? schedule.limitWorkHoursDay,
+                    // allowedOvertime: body.allowedOvertime ?? schedule.allowedOvertime,
                     // lunchStartTime: body.lunchStartTime ?? schedule.lunchStartTime,
                     // lunchEndTime: body.lunchEndTime ?? schedule.lunchEndTime,
                 },
