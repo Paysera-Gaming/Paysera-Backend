@@ -18,15 +18,13 @@ export function initializeDateTimeZone(date: Date, timeZone = TIMEZONE): Date {
         year: newDate.getFullYear(),
         month: newDate.getMonth(),
         date: newDate.getDate(),
-        hours: getHours(newDate),
+        hours: getHours(date),
         minutes: getMinutes(date),
         seconds: getSeconds(date),
     })
 }
 
 export function printDate(date: Date) {
-    console.log(getHours(date), getMinutes(date), getSeconds(date));
-    console.log(formatDate(date, 'MMMM d, yyyy hh:mm:ss a'));
 
     return formatDate(date, 'MMMM d, yyyy hh:mm:ss a');
 }
