@@ -113,6 +113,27 @@ export class EmployeeService {
         return employee;
     }
 
+    static async getEmployeeByUsername(username: string) {
+        const employee = await prisma.employee.findFirst({
+            where: {
+                username,
+            },
+            select: {
+                id: true,
+                username: true,
+                firstName: true,
+                lastName: true,
+                middleName: true,
+                accessLevel: true,
+                isActive: true,
+                departmentId: true,
+                role: true,
+            },
+        });
+
+        return employee;
+    }
+
     static async createEmployee(data: Employee) {
         await prisma.employee.create({
             data: {
