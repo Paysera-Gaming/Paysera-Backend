@@ -2,8 +2,8 @@ import { prisma } from "../config/database";
 import { initializeHourTimeZone } from "../utils/date";
 import { Department } from "@prisma/client";
 
-class DepartmentService {
-    async getAllDepartments() {
+export class DepartmentService {
+    static async getAllDepartments() {
         return await prisma.department.findMany({
             orderBy: {
                 createdAt: 'asc'
@@ -37,7 +37,7 @@ class DepartmentService {
         });
     }
 
-    async getDepartmentEmployees(departmentId: number) {
+    static async getDepartmentEmployees(departmentId: number) {
         const department = await prisma.department.findFirst({
             where: { id: departmentId },
             include: {
@@ -48,7 +48,7 @@ class DepartmentService {
         return department ? department.Employees || [] : [];
     }
 
-    async getDepartmentById(departmentId: number) {
+    static async getDepartmentById(departmentId: number) {
         const department = await prisma.department.findUnique({
             where: { id: departmentId },
             include: {
@@ -61,7 +61,7 @@ class DepartmentService {
         return department;
     }
 
-    async createDepartment(body: any) {
+    static async createDepartment(body: any) {
         return await prisma.department.create({
             data: {
                 name: body.name.trim() || "Department Name",
@@ -80,7 +80,7 @@ class DepartmentService {
 
     }
 
-    async updateDepartmentById(departmentId: number, body: Partial<Department>) {
+    static async updateDepartmentById(departmentId: number, body: Partial<Department>) {
         const { name, leaderId } = body;
         return await prisma.department.update({
             where: { id: departmentId },
@@ -91,7 +91,7 @@ class DepartmentService {
         });
     }
 
-    async deleteDepartmentById(departmentId: number) {
+    static async deleteDepartmentById(departmentId: number) {
         const departmentSchedule = await prisma.departmentSchedule.findMany({
             where: { departmentId: departmentId }
         });
@@ -114,7 +114,7 @@ class DepartmentService {
         ]);
     }
 
-    async getDepartmentSchedules(departmentId: number) {
+    static async getDepartmentSchedules(departmentId: number) {
         return await prisma.departmentSchedule.findMany({
             where: { departmentId: departmentId },
             include: {
@@ -128,7 +128,7 @@ class DepartmentService {
         });
     }
 
-    async getDepartmentSchedulesToday(departmentId: number) {
+    static async getDepartmentSchedulesToday(departmentId: number) {
         const timeZone = 'Asia/Manila';
         const startOfDay = initializeHourTimeZone(new Date(new Date().setHours(0, 0, 0, 0)), timeZone);
         const endOfDay = initializeHourTimeZone(new Date(new Date().setHours(23, 59, 59, 999)), timeZone);
@@ -154,7 +154,7 @@ class DepartmentService {
         });
     }
 
-    async getDepartmentAttendance(departmentId: number) {
+    static async getDepartmentAttendance(departmentId: number) {
         const employee = await prisma.employee.findMany({
             where: { Department: { id: departmentId } }
         });
@@ -174,7 +174,7 @@ class DepartmentService {
         });
     }
 
-    async getDepartmentAttendanceToday(departmentId: number) {
+    static async getDepartmentAttendanceToday(departmentId: number) {
         const employee = await prisma.employee.findMany({
             where: { Department: { id: departmentId } }
         });
@@ -268,4 +268,4 @@ class DepartmentService {
     }
 }
 
-export default new DepartmentService();
+export default DepartmentService;
