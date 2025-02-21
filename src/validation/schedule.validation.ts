@@ -97,12 +97,11 @@ function validateCreateRoleSchedule(schedule: any) {
 function validateCreatePersonalSchedule(schedule: any) {
     const scheduleSchema = z.object({
         employeeId: z.number(),
+        day: z.array(z.enum(['SUNDAY', 'MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY'])).nonempty(),
     });
 
-    console.log(schedule, "schedule nigga");
 
-
-    const { employeeId, ...scheduleProps } = schedule;
+    const { employeeId, day, ...scheduleProps } = schedule;
 
     scheduleSchema.parse(schedule);
     validateCreateSchedule(scheduleProps);

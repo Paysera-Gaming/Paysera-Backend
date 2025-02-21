@@ -25,7 +25,6 @@ export function initializeDateTimeZone(date: Date, timeZone = TIMEZONE): Date {
 }
 
 export function printDate(date: Date) {
-
     return formatDate(date, 'MMMM d, yyyy hh:mm:ss a');
 }
 
