@@ -2,8 +2,9 @@ import { Employee } from "../types";
 import { z } from "zod";
 
 
-function validateCreateOneEmployee(employee: Employee) {
+function validateCreateOneEmployee(employee: any) {
     const employeeSchema = z.object({
+        email: z.string().email(),
         username: z.string().min(8).max(50),
         firstName: z.string().min(2).max(50),
         lastName: z.string().min(2).max(50),
@@ -20,8 +21,9 @@ function validateCreateOneEmployee(employee: Employee) {
     employeeSchema.parse(employee);
 }
 
-function validateUpdateEmployee(employee: Employee) {
+function validateUpdateEmployee(employee: any) {
     const updateEmployeeSchema = z.object({
+        email: z.string().email().optional(),
         username: z.string().min(8).max(50).optional(),
         firstName: z.string().min(2).max(50).optional(),
         lastName: z.string().min(2).max(50).optional(),
@@ -37,8 +39,9 @@ function validateUpdateEmployee(employee: Employee) {
     updateEmployeeSchema.parse(employee);
 }
 
-function validateEmployee(employee: Employee) {
+function validateEmployee(employee: any) {
     const employeeSchema = z.object({
+        email: z.string().email(),
         firstName: z.string().min(2).max(50),
         lastName: z.string().min(2).max(50),
         middleName: z.string().min(2).max(50),
