@@ -59,7 +59,7 @@ export function asyncHandler(handler: Function) {
     };
 }
 
-export const customThrowError = (status: number, message: string): never => {
+export const raiseHttpError = (status: number, message: string): never => {
     const error: CustomError = new Error(message);
     error.status = status;
     throw error;
