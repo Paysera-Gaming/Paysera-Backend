@@ -477,6 +477,7 @@ export async function cleanUpDatabase() {
     await prisma.employee.deleteMany();
     await prisma.department.deleteMany();
     await prisma.holiday.deleteMany();
+    await prisma.announcement.deleteMany();
 }
 
 seedDatabase();
