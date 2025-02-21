@@ -102,9 +102,11 @@ function validateUpdateRoleSchedule(schedule: any) {
 function validateUpdatePersonalSchedule(schedule: any) {
     const scheduleSchema = z.object({
         employeeId: z.number(),
+        day: z.array(z.enum(['SUNDAY', 'MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY'])).nonempty(),
     });
 
-    const { employeeId, ...scheduleProps } = schedule;
+
+    const { employeeId, day, ...scheduleProps } = schedule;
 
     scheduleSchema.parse(schedule);
     validateUpdateSchedule(scheduleProps);
