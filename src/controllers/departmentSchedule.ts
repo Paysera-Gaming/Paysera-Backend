@@ -1,7 +1,7 @@
 import { prisma } from '../config/database';
 import { customThrowError } from '../middlewares/errorHandler';
-import { validateCreateRoleSchedule } from '../validate/schedule.validation';
-import { validateUpdateRoleSchedule } from '../validate/scheduleUpdate.validation';
+import { validateCreateRoleSchedule } from '../validation/schedule.validation';
+import { validateUpdateRoleSchedule } from '../validation/scheduleUpdate.validation';
 import { Request, Response } from 'express';
 import { initializeHourTimeZone } from '../utils/date';
 import { isAfter } from 'date-fns';

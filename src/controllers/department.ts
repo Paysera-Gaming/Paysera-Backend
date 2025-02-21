@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
 import { prisma } from "../config/database";
-import { validateCreateDepartment, validateDepartmentAssignEmployee, validateDepartmentAssignLeader, validateDepartmentRemoveEmployee, validateUpdateDepartment } from "../validate/department.validation";
+import { validateCreateDepartment, validateDepartmentAssignEmployee, validateDepartmentAssignLeader, validateDepartmentRemoveEmployee, validateUpdateDepartment } from "../validation/department.validation";
 import { customThrowError } from '../middlewares/errorHandler';
 import { initializeHourTimeZone } from "../utils/date";
 import { io } from "..";
