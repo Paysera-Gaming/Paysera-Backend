@@ -1,10 +1,10 @@
 import { initializeHourTimeZone } from '../utils/date';
 import { prisma } from '../config/database';
 import { customThrowError } from '../middlewares/errorHandler';
-import { validateCreatePersonalSchedule } from '../validate/schedule.validation';
+import { validateCreatePersonalSchedule } from '../validation/schedule.validation';
 import { Request, Response } from 'express';
 import { isAfter } from 'date-fns';
-import { validateUpdatePersonalSchedule } from '../validate/scheduleUpdate.validation';
+import { validateUpdatePersonalSchedule } from '../validation/scheduleUpdate.validation';
 
 
 // TODO: Implement the validation of the personal schedule
@@ -22,7 +22,7 @@ async function getAllPersonalSchedules(req: Request, res: Response) {
 async function getPersonalScheduleById(req: Request, res: Response) {
     const personalScheduleId = Number(req.params.id);
     if (!personalScheduleId) {
-        customThrowError(400, "Invalid personal schedule ID");
+        return customThrowError(400, "Invalid personal schedule ID");
     }
 
     const existingPersonalSchedule = await prisma.personalSchedule.findFirst({
@@ -68,7 +68,7 @@ async function createPersonalSchedule(req: Request, res: Response) {
 
     // validate schedule
     if (isAfter(startTime, endTime)) {
-        customThrowError(400, "Start time must be before end time");
+        return customThrowError(400, "Start time must be before end time");
     }
 
     validateCreatePersonalSchedule({
@@ -78,25 +78,25 @@ async function createPersonalSchedule(req: Request, res: Response) {
         endTime: endTime,
         scheduleType: req.body.scheduleType,
         // startTimeLimit: req.body.startTimeLimit,
-        limitWorkHoursDay: req.body.limitWorkHoursDay,
-        allowedOvertime: req.body.allowedOvertime,
+        // limitWorkHoursDay: req.body.limitWorkHoursDay,
+        // allowedOvertime: req.body.allowedOvertime,
     });
 
     // validate request body of days
     if (req.body.day) {
         if (!Array.isArray(req.body.day)) {
-            customThrowError(400, "Invalid list of days");
+            return customThrowError(400, "Invalid list of days");
         }
 
         if (req.body.day.length === 0) {
-            customThrowError(400, "List of days is empty");
+            return customThrowError(400, "List of days is empty");
         }
 
         const days = req.body.day;
         const daysOfWeek = ['SUNDAY', 'MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY'];
         for (const day of days) {
             if (!daysOfWeek.includes(day)) {
-                customThrowError(400, "Invalid day in days array");
+                return customThrowError(400, "Invalid day in days array");
             }
         }
     }
@@ -106,8 +106,8 @@ async function createPersonalSchedule(req: Request, res: Response) {
             scheduleType: req.body.scheduleType,
             startTime: startTime,
             endTime: endTime,
-            limitWorkHoursDay: req.body.limitWorkHoursDay,
-            allowedOvertime: req.body.allowedOvertime,
+            // limitWorkHoursDay: req.body.limitWorkHoursDay,
+            // allowedOvertime: req.body.allowedOvertime,
         },
     });
 
@@ -127,7 +127,7 @@ async function createPersonalSchedule(req: Request, res: Response) {
 async function updatePersonalSchedule(req: Request, res: Response) {
     const personalScheduleId = Number(req.params.id);
     if (!personalScheduleId) {
-        customThrowError(400, "Invalid personal schedule ID");
+        return customThrowError(400, "Invalid personal schedule ID");
     }
 
     // TODO: Implement the validation CHANGE EMPLOYEE ID
@@ -140,29 +140,29 @@ async function updatePersonalSchedule(req: Request, res: Response) {
         return customThrowError(404, "Personal schedule not found");
     }
 
-    const employee = await prisma.employee.findFirst({
-        where: { id: personalSchedule.employeeId },
-    });
+    // const employee = await prisma.employee.findFirst({
+    //     where: { id: personalSchedule.employeeId },
+    // });
 
-    if (!employee) {
-        return customThrowError(404, "No employee found for this personal schedule");
-    }
+    // if (!employee) {
+    //     return customThrowError(404, "No employee found for this personal schedule");
+    // }
 
     // validate request body of days
     if (req.body.day) {
         if (!Array.isArray(req.body.day)) {
-            customThrowError(400, "Days must be an array");
+            return customThrowError(400, "Days must be an array");
         }
 
         if (req.body.day.length === 0) {
-            customThrowError(400, "Days must not be empty");
+            return customThrowError(400, "Days must not be empty");
         }
 
         const days = req.body.day;
         const daysOfWeek = ['SUNDAY', 'MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY'];
         for (const day of days) {
             if (!daysOfWeek.includes(day)) {
-                customThrowError(400, "Invalid day in days array");
+                return customThrowError(400, "Invalid day in days array");
             }
         }
     }
@@ -171,7 +171,7 @@ async function updatePersonalSchedule(req: Request, res: Response) {
     const endTime = initializeHourTimeZone(req.body.endTime);
     // validate schedule
     if (startTime >= endTime) {
-        customThrowError(400, "Start time must be before end time");
+        return customThrowError(400, "Start time must be before end time");
     }
 
     const body = {
@@ -180,34 +180,48 @@ async function updatePersonalSchedule(req: Request, res: Response) {
         scheduleType: req.body.scheduleType ?? personalSchedule.Schedule.scheduleType,
         startTime: startTime,
         endTime: endTime,
-        limitWorkHoursDay: req.body.limitWorkHoursDay,
-        allowedOvertime: req.body.allowedOvertime,
+        // limitWorkHoursDay: req.body.limitWorkHoursDay,
+        // allowedOvertime: req.body.allowedOvertime,
     };
 
     validateUpdatePersonalSchedule(body);
 
-    // validate schedule
-    if (startTime >= endTime) {
-        customThrowError(400, "Start time must be before end time");
+    // check if new employee id is existing
+    const newEmployee = await prisma.employee.findFirst({
+        where: { id: body.employeeId },
+    });
+
+    if (!newEmployee) {
+        return customThrowError(404, "Employee not found");
     }
 
-    await prisma.personalSchedule.update({
-        where: { id: personalScheduleId },
+    // validate schedule
+    if (startTime >= endTime) {
+        return customThrowError(400, "Start time must be before end time");
+    }
+
+    await prisma.schedule.update({
+        where: { id: personalSchedule.scheduleId },
+        data: {
+            scheduleType: body.scheduleType ?? personalSchedule.Schedule.scheduleType,
+            startTime: body.startTime ?? personalSchedule.Schedule.startTime,
+            endTime: body.endTime ?? personalSchedule.Schedule.endTime,
+            // limitWorkHoursDay: body.limitWorkHoursDay ?? personalSchedule.Schedule.limitWorkHoursDay,
+            // allowedOvertime: body.allowedOvertime ?? personalSchedule.Schedule.allowedOvertime,
+        },
+    });
+
+    const result = await prisma.personalSchedule.update({
+        where: { id: personalSchedule.id },
         data: {
             name: body.name ?? personalSchedule.name,
             day: req.body.day ?? personalSchedule.day,
-            Schedule: {
-                update: {
-                    id: body.employeeId ?? personalSchedule.Schedule.id,
-                    scheduleType: body.scheduleType ?? personalSchedule.Schedule.scheduleType,
-                    startTime: body.startTime ?? personalSchedule.Schedule.startTime,
-                    endTime: body.endTime ?? personalSchedule.Schedule.endTime,
-                    limitWorkHoursDay: body.limitWorkHoursDay ?? personalSchedule.Schedule.limitWorkHoursDay,
-                    allowedOvertime: body.allowedOvertime ?? personalSchedule.Schedule.allowedOvertime,
-                },
-            },
+            employeeId: body.employeeId,
         },
     });
+
+    console.log(result);
+
 
     return res.status(201).send("Schedule updated successfully");
 }
@@ -216,7 +230,7 @@ async function updatePersonalSchedule(req: Request, res: Response) {
 async function removePersonalSchedule(req: Request, res: Response) {
     const personalScheduleId = Number(req.params.id);
     if (!personalScheduleId) {
-        customThrowError(400, "Invalid personal schedule ID");
+        return customThrowError(400, "Invalid personal schedule ID");
     }
 
     const existingPersonalSchedule = await prisma.personalSchedule.findUnique({
