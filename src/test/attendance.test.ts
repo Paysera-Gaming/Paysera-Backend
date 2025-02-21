@@ -3,7 +3,7 @@ import app from '..';
 import { Attendance } from '@prisma/client';
 import { prisma } from '../config/database';
 
-describe('Department Attendance Routes', () => {
+describe('Attendance Routes', () => {
     let attendance: Attendance[];
     it('should return a list of Attendance', async () => {
         const response = await request(app).get('/api/attendance').expect(200);
@@ -85,5 +85,17 @@ describe('Department Attendance Routes', () => {
         });
 
         expect(attendance).toBeNull();
+    });
+
+    it('should return 404 if attendance record not found', async () => {
+        await request(app)
+            .get('/api/attendance/99999')
+            .expect(404);
+    });
+
+    it('should return 404 when trying to delete a non-existing attendance record', async () => {
+        await request(app)
+            .delete('/api/attendance/99999')
+            .expect(404);
     });
 });

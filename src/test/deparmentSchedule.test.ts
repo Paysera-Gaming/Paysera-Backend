@@ -91,4 +91,11 @@ describe('Department Schedule API', () => {
 
     });
 
+    it('should return 404 for deleting non-existent department schedule', async () => {
+        const response = await request(server).delete(`/api/department-schedule/-1`);
+        console.log(response.body, "response department schedule");
+
+        expect(response.status).toBe(404);
+    });
+
 });

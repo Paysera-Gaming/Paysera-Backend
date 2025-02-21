@@ -10,8 +10,10 @@ describe('Employee Routes', () => {
     describe('GET Employee', () => {
         it('should return a list of employees', async () => {
             const response = await request(server).get('/api/employee').expect(200);
-            expect(response.body.length).toBeGreaterThan(0);
             listEmployee = response.body;
+            console.log(listEmployee, "list of employees");
+
+            expect(response.body.length).toBeGreaterThan(0);
         });
     });
 

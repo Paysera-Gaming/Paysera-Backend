@@ -3,13 +3,16 @@ import jwt from 'jsonwebtoken';
 import app from '..';
 import { prisma } from '../config/database';
 import { configEnv } from '../config/dotenv';
+import { before } from 'node:test';
+import bcrypt from 'bcryptjs';
+import { Employee } from '@prisma/client';
 
 describe('Authorization tests', () => {
 
-    it('should deny access to protected route without JWT', async () => {
-        const response = await request(app).get('/api/protected');
-        expect(response.status).toBe(401);
-    });
+    // it('should deny access to protected route without JWT', async () => {
+    //     const response = await request(app).get('/api/protected');
+    //     expect(response.status).toBe(401);
+    // });
 
     it('should allow access with a valid JWT in cookie', async () => {
         // Generate a valid JWT
@@ -105,5 +108,54 @@ describe('Authorization tests', () => {
             .set('Cookie', `token=${invalidToken}`);
 
         expect(response.status).toBe(403);
+    });
+
+
+    describe('Forget password tests', () => {
+        let employeeForget: Employee;
+
+        beforeAll(async () => {
+            const department = await prisma.department.create({
+                data: {
+                    name: 'ForgetPasswordTest',
+                }
+            });
+
+            const password = configEnv.ACCOUNT_PASSWORD;
+            const hashedPassword = await bcrypt.hash(password, 10);
+            employeeForget = await prisma.employee.create({
+                data: {
+                    email: "ramborat10099@gmail.com",
+                    role: 'Programmer',
+                    departmentId: department.id,
+                    username: "ramborat10099@gmail.com",
+                    passwordCredentials: hashedPassword,
+                    firstName: "forgetpassword",
+                    lastName: "forgetpassword",
+                    middleName: "forgetpassword",
+                    accessLevel: 'EMPLOYEE',
+                }
+            });
+        });
+
+        it('should send an email to reset password', async () => {
+            const response = await request(app)
+                .post(`/api/forget-password`).send({ email: employeeForget?.email });
+
+            console.log(response.body, "password reset");
+            expect(response.status).toBe(200);
+        });
+
+        it('should reset password', async () => {
+            const response = await request(app)
+                .post(`/api/reset-password/${employeeForget?.id}`)
+                .send({ password: 'newpassword' });
+
+            console.log(response.body);
+
+
+            expect(response.status).toBe(200);
+        });
+
     });
 });

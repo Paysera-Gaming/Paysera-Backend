@@ -2,8 +2,9 @@
 import request from 'supertest';
 import app from '..'; // Adjust the path to your Express app
 import { prisma } from '../config/database';
-import { differenceInHours, differenceInMinutes, formatDate } from 'date-fns';
-import { initializeHourTimeZone, printDate, returnFormatDate } from '../utils/date';
+import { differenceInMinutes, formatDate } from 'date-fns';
+import { initializeHourTimeZone, printDate } from '../utils/date';
+import { Employee } from '@prisma/client';
 
 describe('Attendance Routes', () => {
     let employeeId: number;
@@ -60,7 +61,7 @@ describe('Attendance Routes', () => {
 
     describe('POST /api/attendance/time-in', () => {
         it('should record time in successfully', async () => {
-            timeIn = initializeHourTimeZone(new Date(2025, 8, 15, 8, 0, 0));  // get the current time 8:00 AM
+            timeIn = initializeHourTimeZone(new Date(2025, 8, 15, 8, 1, 0));  // get the current time 8:00 AM
 
             // get timeIn AM and PM format
             const res = await request(app)
@@ -74,8 +75,7 @@ describe('Attendance Routes', () => {
                 where: { employeeId },
             });
 
-            console.log(formatDate(timeIn, 'MMMM d, yyyy'), "time in test");
-            console.log(attendance?.date, "attendance date");
+
 
             expect(res.status).toBe(200);
             expect(attendance?.date).toBe(formatDate(timeIn, 'MMMM d, yyyy'));
@@ -216,51 +216,177 @@ describe('Attendance Routes', () => {
 
     describe('POST /api/attendance/time-out', () => {
         it('should record time out successfully', async () => {
-            const timeOut = new Date(timeIn.getFullYear(), timeIn.getMonth(), timeIn.getDate(), 19, 10, 0); // 5:00 PM on the same day as timeIn
-
-            console.log(timeIn, timeOut, "time out test");
-
+            const timeOut = initializeHourTimeZone(new Date(2025, 8, 15, 17, 0, 0)); // 5:00 PM
             const res = await request(app)
                 .post('/api/attendance/time-out')
                 .send({
                     employeeId,
                     timeStamp: timeOut,
-                }).expect(200);
+                });
+
+            console.log(res.body, "res test 1");
+
+            expect(res.status).toBe(200)
 
             const attendance = res.body;
             const totalHoursWorked = differenceInMinutes(initializeHourTimeZone(timeOut), initializeHourTimeZone(timeIn));
-            console.log(res.body, "text done", totalHoursWorked);
-            console.log(returnFormatDate(timeIn), returnFormatDate(timeOut), "time out test");
-
 
             expect(attendance?.status).toBe('DONE');
             expect(formatDate(attendance?.timeOut, 'MMMM d, yyyy')).toBe(formatDate(timeOut, 'MMMM d, yyyy'));
             expect(attendance?.timeHoursWorked).toBeLessThanOrEqual(8);
             expect(attendance?.timeTotal).toBe((totalHoursWorked / 60).toFixed(3));
-
-            // expect(attendance?.timeTotal).toBe((differenceInMinutes(initializeHourTimeZone(timeOut), initializeHourTimeZone(timeIn)) / 60).toFixed(3));
+            expect(attendance?.timeTotal).toBe((differenceInMinutes(initializeHourTimeZone(timeOut), initializeHourTimeZone(timeIn)) / 60).toFixed(3));
         });
 
-        // it('should return 400 already timeout', async () => {
-        //     const res = await request(app)
-        //         .post('/api/attendance/time-out')
-        //         .send({
-        //             employeeId,
-        //             date: formatDate(timeIn, 'MMMM d, yyyy')
-        //         });
+        it('should return 400 already timeout', async () => {
+            const res = await request(app)
+                .post('/api/attendance/time-out')
+                .send({
+                    employeeId,
+                    timeStamp: new Date(timeIn.getFullYear(), timeIn.getMonth(), timeIn.getDate(), 19, 10, 0),
+                });
 
-        //     expect(res.status).toBe(400);
-        // });
+            expect(res.status).toBe(400);
+        });
 
-        // it('should return 400 if timeOut is missing', async () => {
-        //     const res = await request(app)
-        //         .post('/api/attendance/time-out')
-        //         .send({
-        //             employeeId,
-        //         });
+        it('should return 400 if timeOut is missing', async () => {
+            const res = await request(app)
+                .post('/api/attendance/time-out')
+                .send({
+                    employeeId,
+                });
 
-        //     expect(res.status).toBe(400);
-        // });
+            expect(res.status).toBe(400);
+        });
+    });
+
+    describe('For overtime request', () => {
+        let employeeOvertime: Employee;
+        const timeInOverTime = new Date(2025, 8, 15, 8, 0, 0);  // get the current time 8:00 AM
+        beforeAll(async () => {
+            const department = await prisma.department.create({
+                data: {
+                    name: 'Overtime Department',
+                },
+            });
+
+            departmentId = department.id;
+
+            // Create a department schedule
+            fixedSchedule = await prisma.schedule.create({
+                data: {
+                    scheduleType: 'FIXED',
+                    startTime: new Date(2020, 8, 15, 8, 0, 0),  // 8:00 AM
+                    endTime: new Date(2020, 8, 15, 17, 0, 0),   // 5:00 PM
+                    DepartmentSchedule: {
+                        create: {
+                            departmentId,
+                            role: 'Programmer',
+                        },
+                    },
+                },
+            });
+
+
+            employeeOvertime = await prisma.employee.create({
+                data: {
+                    email: "randomOverTime@gmail.com",
+                    role: 'Programmer',
+                    departmentId: department.id,
+                    username: 'OvertimeRequest',
+                    passwordCredentials: 'password',
+                    firstName: 'OvertimeRequest',
+                    lastName: 'OvertimeRequest',
+                    middleName: 'OvertimeRequest',
+                    accessLevel: 'EMPLOYEE',
+                },
+            });
+        });
+
+        it('should clock in 8am', async () => {
+
+            const res = await request(app)
+                .post('/api/attendance/time-in')
+                .send({
+                    employeeId: employeeOvertime.id,
+                    timeStamp: timeInOverTime,
+                });
+
+            console.log(res.body, "over time in request");
+
+            expect(res.status).toBe(200);
+        });
+
+        it('should return 400 if overtime request is less than 8 hours', async () => {
+            const overtimeRequest = new Date(2025, 8, 15, 13, 0, 0); // 4:00 PM
+
+            const res = await request(app)
+                .get('/api/attendance/request-overtime')
+                .send({
+                    employeeId: employeeOvertime.id,
+                    timeStamp: overtimeRequest,
+                    limitOvertime: 3,
+                });
+
+            expect(res.status).toBe(400);
+        });
+
+        it('should return 400 if limit overtime request is exceed than 4 ', async () => {
+            const tempTime = new Date(2025, 8, 15, 17, 30, 0); // 5:30 PM
+
+            const res = await request(app)
+                .post('/api/attendance/request-overtime')
+                .send({
+                    employeeId: employeeOvertime.id,
+                    timeStamp: tempTime,
+                    limitOvertime: 5,
+                });
+
+            console.log(res.body, "res test 4");
+
+
+            expect(res.status).toBe(400);
+        });
+
+
+        it('should request overtime 9 1/2 hours after time in', async () => {
+            const overtimeRequest = new Date(2025, 8, 15, 17, 30, 0); // 5:30 PM
+
+            const res = await request(app)
+                .post('/api/attendance/accept-overtime')
+                .send({
+                    employeeId: employeeOvertime.id,
+                    timeStamp: overtimeRequest,
+                    limitOvertime: 4,
+                    isRejectedOvertime: false,
+                    isAllowedOvertime: true,
+                });
+
+
+            console.log(res, employeeOvertime.id, "res test 9");
+
+
+            expect(res.status).toBe(200);
+        });
+
+        it('should time out calculate the right hour based on the request overtime', async () => {
+            const timeOutOverTime = new Date(2025, 8, 15, 19, 0, 0); // 9:30 PM        
+
+            const res = await request(app)
+                .post('/api/attendance/time-out')
+                .send({
+                    employeeId: employeeOvertime.id,
+                    timeStamp: timeOutOverTime,
+                });
+
+
+            printDate(timeInOverTime);
+            printDate(timeOutOverTime);
+            console.log(res.body, "res test done");
+
+
+            expect(res.status).toBe(200);
+        });
     });
 
 });
