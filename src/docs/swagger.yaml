@@ -121,6 +121,63 @@ paths:
                   message:
                     type: string
                     example: "Account not found"
+  # forget password
+  /api/forget-password:
+    post:
+      tags:
+        - Authentication
+      summary: Send forget password email
+      description: Sends an email with a link to reset the user's password.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                  example: "user@example.com"
+                  description: "Email of the user"
+      responses:
+        "200":
+          description: Password reset email sent
+        "404":
+          description: User not found
+        "500":
+          description: Error sending email
+
+  /api/reset-password/{token}:
+    post:
+      tags:
+        - Authentication
+      summary: Reset password
+      description: Resets the user's password using the provided token.
+      parameters:
+        - in: path
+          name: token
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                password:
+                  type: string
+                  example: "newPassword123"
+                  description: "New password for the user"
+      responses:
+        "200":
+          description: Password reset successful
+        "400":
+          description: Token and password are required
+        "401":
+          description: Invalid token
+
   # employee route
   /api/employee/admin:
     get:
@@ -900,12 +957,12 @@ paths:
         "404":
           description: Employee not found.
 
-  /api/attendance/lunch-in:
+  /api/attendance/request-overtime:
     post:
       tags:
         - Attendance
-      summary: Start lunch break
-      description: Registers the employee's lunch-in time and updates the attendance record.
+      summary: Request for overtime
+      description: Registers the employee's overtime request.
       requestBody:
         required: true
         content:
@@ -919,21 +976,25 @@ paths:
                 timeStamp:
                   type: string
                   format: date-time
-                  example: "2024-09-15T12:00:00Z"
+                  example: "2024-09-15T18:00:00Z"
+                  description: "Current time of employee during  requesting overtime"
+                limitOvertime:
+                  type: number
+                  example: 4
       responses:
         "200":
-          description: Lunch time in recorded successfully.
+          description: Overtime request recorded successfully.
         "400":
-          description: Invalid input or lunch already started.
+          description: Invalid input or overtime request issue.
         "404":
-          description: Employee not found or attendance record missing.
+          description: Employee not found.
 
-  /api/attendance/lunch-out:
+  /api/attendance/accept-overtime:
     post:
       tags:
         - Attendance
-      summary: End lunch break
-      description: Registers the employee's lunch-out time and updates the attendance record.
+      summary: Request for overtime
+      description: Registers the employee's overtime request and updates the attendance record.
       requestBody:
         required: true
         content:
@@ -947,14 +1008,80 @@ paths:
                 timeStamp:
                   type: string
                   format: date-time
-                  example: "2024-09-15T12:30:00Z"
+                  example: "2024-09-15T18:00:00Z"
+                  description: "Current time of employee during  requesting overtime"
+                limitOvertime:
+                  type: number
+                  example: 4
+                isAllowedOvertime:
+                  type: boolean
+                  example: true
+                isRejectedOvertime:
+                  type: boolean
+                  example: true
       responses:
         "200":
-          description: Lunch time out recorded successfully.
+          description: Overtime request recorded successfully.
         "400":
-          description: Invalid input or lunch not started yet.
+          description: Invalid input or overtime request issue.
         "404":
-          description: Employee not found or attendance record missing.
+          description: Employee not found.
+
+  # /api/attendance/lunch-in:
+  #   post:
+  #     tags:
+  #       - Attendance
+  #     summary: Start lunch break
+  #     description: Registers the employee's lunch-in time and updates the attendance record.
+  #     requestBody:
+  #       required: true
+  #       content:
+  #         application/json:
+  #           schema:
+  #             type: object
+  #             properties:
+  #               employeeId:
+  #                 type: integer
+  #                 example: 1
+  #               timeStamp:
+  #                 type: string
+  #                 format: date-time
+  #                 example: "2024-09-15T12:00:00Z"
+  #     responses:
+  #       "200":
+  #         description: Lunch time in recorded successfully.
+  #       "400":
+  #         description: Invalid input or lunch already started.
+  #       "404":
+  #         description: Employee not found or attendance record missing.
+
+  # /api/attendance/lunch-out:
+  #   post:
+  #     tags:
+  #       - Attendance
+  #     summary: End lunch break
+  #     description: Registers the employee's lunch-out time and updates the attendance record.
+  #     requestBody:
+  #       required: true
+  #       content:
+  #         application/json:
+  #           schema:
+  #             type: object
+  #             properties:
+  #               employeeId:
+  #                 type: integer
+  #                 example: 1
+  #               timeStamp:
+  #                 type: string
+  #                 format: date-time
+  #                 example: "2024-09-15T12:30:00Z"
+  #     responses:
+  #       "200":
+  #         description: Lunch time out recorded successfully.
+  #       "400":
+  #         description: Invalid input or lunch not started yet.
+  #       "404":
+  #         description: Employee not found or attendance record missing.
   /api/attendance/today/:id:
     get:
       summary: Get today's attendance record by employee ID
@@ -1305,6 +1432,13 @@ components:
           format: date-time
     EmployeeCreate:
       type: object
+      required:
+        - username
+        - password
+        - email
+        - firstName
+        - lastName
+        - middleName
       properties:
         id:
           type: integer
@@ -1312,6 +1446,8 @@ components:
           $ref: "#/components/schemas/AccessLevel"
         isActive:
           type: boolean
+        email:
+          type: string
         username:
           type: string
         passwordCredentials:
@@ -1326,12 +1462,9 @@ components:
           type: string
         departmentId:
           type: integer
-        createdAt:
-          type: string
-          format: date-time
-        updatedAt:
-          type: string
-          format: date-time
+        isAllowedRequestOvertime:
+          type: boolean
+          example: false
     Employee:
       type: object
       properties:
@@ -1347,6 +1480,8 @@ components:
         isActive:
           type: boolean
           example: false
+        email:
+          type: string
         username:
           type: string
           example: "pangilinan2002"
@@ -1362,6 +1497,9 @@ components:
         role:
           type: string
           example: "Software Engineer"
+        isAllowedRequestOvertime:
+          type: boolean
+          example: false
     Department:
       type: object
       properties:
