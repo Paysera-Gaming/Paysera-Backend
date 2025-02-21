@@ -134,6 +134,26 @@ export class EmployeeService {
         return employee;
     }
 
+    static async getEmployeeByEmail(email: string) {
+        const employee = await prisma.employee.findFirst({
+            where: {
+                email,
+            },
+            select: {
+                id: true,
+                username: true,
+                firstName: true,
+                lastName: true,
+                middleName: true,
+                accessLevel: true,
+                isActive: true,
+                departmentId: true,
+                role: true,
+            },
+        });
+
+        return employee;
+    }
 
     static async getEmployeeByUserNameAuth(email: string) {
         const employee = await prisma.employee.findFirst({
@@ -181,6 +201,7 @@ export class EmployeeService {
                 departmentId: data.departmentId || existingEmployee?.departmentId,
                 role: data.role || existingEmployee?.role,
                 passwordCredentials: data.password || existingEmployee?.passwordCredentials,
+                isAllowedRequestOvertime: data.isAllowedRequestOvertime || existingEmployee?.isAllowedRequestOvertime,
             },
         });
     }
