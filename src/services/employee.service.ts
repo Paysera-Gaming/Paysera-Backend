@@ -134,6 +134,17 @@ export class EmployeeService {
         return employee;
     }
 
+
+    static async getEmployeeByUserNameAuth(email: string) {
+        const employee = await prisma.employee.findFirst({
+            where: {
+                email,
+            },
+
+        });
+
+        return employee;
+    }
     static async createEmployee(data: Employee) {
         await prisma.employee.create({
             data: {
@@ -151,19 +162,25 @@ export class EmployeeService {
     }
 
     static async updateEmployee(employeeId: number, data: any) {
+        const existingEmployee = await prisma.employee.findFirst({
+            where: {
+                id: employeeId,
+            },
+        });
+
         await prisma.employee.update({
             where: { id: employeeId },
             data: {
-                email: data.email,
-                username: data.username,
-                firstName: data.firstName,
-                lastName: data.lastName,
-                middleName: data.middleName,
-                accessLevel: data.accessLevel,
-                isActive: data.isActive,
-                departmentId: data.departmentId,
-                role: data.role,
-                passwordCredentials: data.password,
+                email: data.email || existingEmployee?.email,
+                username: data.username || existingEmployee?.username,
+                firstName: data.firstName || existingEmployee?.firstName,
+                lastName: data.lastName || existingEmployee?.lastName,
+                middleName: data.middleName || existingEmployee?.middleName,
+                accessLevel: data.accessLevel || existingEmployee?.accessLevel,
+                isActive: data.isActive !== undefined ? data.isActive : existingEmployee?.isActive,
+                departmentId: data.departmentId || existingEmployee?.departmentId,
+                role: data.role || existingEmployee?.role,
+                passwordCredentials: data.password || existingEmployee?.passwordCredentials,
             },
         });
     }
