@@ -1,7 +1,7 @@
-import { differenceInMinutes, format, getHours, getMinutes, getSeconds, isAfter, isBefore, isWithinInterval, parseISO, set } from 'date-fns';
+import { differenceInMinutes, format, getHours, getMinutes, isAfter, isBefore, isWithinInterval, parseISO, set } from 'date-fns';
 import { Request, Response } from 'express';
 import { prisma } from '../config/database';
-import { customThrowError } from '../middlewares/errorHandler';
+import { raiseHttpError } from '../middlewares/errorHandler';
 import { initializeDateTimeZone, initializeHourTimeZone, printDate, returnFormatDate } from '../utils/date';
 import { Day, Month, Schedule } from '@prisma/client';
 import { TZDate } from '@date-fns/tz';
@@ -13,11 +13,11 @@ const DEFAULT_OVERTIME_LIMIT = 4;
 // POST /api / attendance / time-in
 async function timeIn(req: Request, res: Response) {
     if (!req.body.employeeId) {
-        return customThrowError(400, 'Employee ID is required');
+        return raiseHttpError(400, 'Employee ID is required');
     }
 
     if (!req.body.timeStamp) {
-        return customThrowError(400, 'Time stamp is required');
+        return raiseHttpError(400, 'Time stamp is required');
     }
 
     const body = {
@@ -27,7 +27,7 @@ async function timeIn(req: Request, res: Response) {
 
     // Validate input
     if (!body.employeeId || isNaN(body.timeIn.getTime())) {
-        return customThrowError(400, 'Invalid time in');
+        return raiseHttpError(400, 'Invalid time in');
     }
 
     // Check if the employee exists
@@ -46,18 +46,18 @@ async function timeIn(req: Request, res: Response) {
     const currentAttendance = await prisma.attendance.findFirst({
         where: {
             employeeId: body.employeeId,
-            date: format(body.timeIn, 'MMMM d, yyyy'),
+            date: formatDate(body.timeIn),
         },
     });
 
     if (!currentEmployee) {
-        return customThrowError(404, 'Employee not found');
+        return raiseHttpError(404, 'Employee not found');
     } else if ((!currentEmployee.role || !currentEmployee.departmentId) && currentEmployee.accessLevel !== "ADMIN") {
-        return customThrowError(400, 'Employee is not assigned to a department');
+        return raiseHttpError(400, 'Employee is not assigned to a department');
     } else if (currentAttendance) {
         // Update the existing attendance record if it is still ongoing
         if (currentAttendance.status === 'ONGOING') {
-            return customThrowError(400, 'Time currently ongoing');
+            return raiseHttpError(400, 'Time currently ongoing');
         }
 
         await prisma.attendance.update({
@@ -78,7 +78,7 @@ async function timeIn(req: Request, res: Response) {
         await prisma.attendance.create({
             data: {
                 employeeId: body.employeeId,
-                date: format(body.timeIn, 'MMMM d, yyyy'), // Format date for the record
+                date: formatDate(body.timeIn), // Format date for the record
                 status: 'ONGOING',
                 scheduleType: "SUPER_FLEXI",
                 timeIn: body.timeIn,
@@ -110,7 +110,7 @@ async function timeIn(req: Request, res: Response) {
     const isDepartmentSchedule = !currentEmployee.PersonalSchedule?.Schedule && currentDepartmentSchedule?.Schedule;
 
     if (!currentSchedule) {
-        return customThrowError(400, 'Employee schedule not found');
+        return raiseHttpError(400, 'Employee schedule not found');
     }
 
     //Check if the current day is holiday
@@ -124,21 +124,19 @@ async function timeIn(req: Request, res: Response) {
     });
 
     if (holiday) {
-        return customThrowError(400, 'Time in on a holiday is not allowed');
+        return raiseHttpError(400, 'Time in on a holiday is not allowed');
     }
 
     // if weekend don't allow time in in department schedule unless environment is testing
     const currentDay = format(initializeDateTimeZone(body.timeIn), 'EEEE').toUpperCase();
     if (isDepartmentSchedule && (currentDay === 'SATURDAY' || currentDay === 'SUNDAY')) {
-        return customThrowError(400, 'Weekend not allowed to time in');
+        return raiseHttpError(400, 'Weekend not allowed to time in');
     } else {
         // Check if the day is included in the employee's personal schedule
         const listOfDays = currentEmployee.PersonalSchedule?.day as Day[];
         if (listOfDays) {
             if (!listOfDays.includes(currentDay as Day)) {
-                console.log(formatDate(body.timeIn), "hello");
-
-                return customThrowError(400, 'Day not allowed to time in');
+                return raiseHttpError(400, 'Day not allowed to time in');
             }
         }
     }
@@ -149,14 +147,14 @@ async function timeIn(req: Request, res: Response) {
 
     // Check if fixed schedule and time in exceeds the schedule end time
     if (currentSchedule.scheduleType === 'FIXED' && isAfter(timeIn, scheduledEndTime)) {
-        return customThrowError(400, 'Time in exceeds the schedule end time');
+        return raiseHttpError(400, 'Time in exceeds the schedule end time');
     }
 
     // Check if fixed schedule and time in is earlier than the scheduled start time
     if (currentSchedule.scheduleType === 'FIXED' && isBefore(timeIn, scheduledStartTime)) {
-        return customThrowError(400, 'Time in is earlier than the scheduled start time');
+        return raiseHttpError(400, 'Time in is earlier than the scheduled start time');
     } else if (currentSchedule.scheduleType === 'FLEXI' && isBefore(timeIn, scheduledStartTime)) {
-        return customThrowError(400, 'Time in is earlier than the allowed start time for flexible schedule');
+        return raiseHttpError(400, 'Time in is earlier than the allowed start time for flexible schedule');
     }
 
     // Check if department schedule is flexible and time in is within the allowed time in range
@@ -172,7 +170,7 @@ async function timeIn(req: Request, res: Response) {
 
         // Check if time in is within the allowed time in range
         if (!isWithinInterval(timeIn, { start: startAllowed, end: endAllowed })) {
-            return customThrowError(400, 'Time in is not within the allowed time in range');
+            return raiseHttpError(400, 'Time in is not within the allowed time in range');
         }
     }
 
@@ -188,7 +186,7 @@ async function timeIn(req: Request, res: Response) {
     await prisma.attendance.create({
         data: {
             employeeId: body.employeeId,
-            date: format(body.timeIn, 'MMMM d, yyyy'), // Format date for the record
+            date: formatDate(body.timeIn), // Format date for the record
             status: 'ONGOING',
             scheduleType: currentSchedule.scheduleType,
             timeIn: effectiveTimeIn,
@@ -209,10 +207,10 @@ async function timeIn(req: Request, res: Response) {
 // POST /api/attendance/time-out
 async function timeOut(req: Request, res: Response) {
     if (!req.body.employeeId) {
-        return customThrowError(400, 'Employee ID is required');
+        return raiseHttpError(400, 'Employee ID is required');
     }
     if (!req.body.timeStamp) {
-        return customThrowError(400, 'Time stamp is required');
+        return raiseHttpError(400, 'Time stamp is required');
     }
 
     const body = {
@@ -221,7 +219,7 @@ async function timeOut(req: Request, res: Response) {
     };
 
     if (isNaN(body.timeOut.getTime())) {
-        return customThrowError(400, 'Invalid time out');
+        return raiseHttpError(400, 'Invalid time out');
     }
 
     // Check if employee exists
@@ -237,9 +235,9 @@ async function timeOut(req: Request, res: Response) {
     });
 
     if (!currentEmployee) {
-        return customThrowError(404, 'Employee not found');
+        return raiseHttpError(404, 'Employee not found');
     } else if ((!currentEmployee.role || !currentEmployee.departmentId) && currentEmployee.accessLevel !== "ADMIN") {
-        return customThrowError(400, 'Employee is not assigned to a department');
+        return raiseHttpError(400, 'Employee is not assigned to a department');
     }
 
     // Get employee's schedule
@@ -269,14 +267,14 @@ async function timeOut(req: Request, res: Response) {
 
         currentSchedule = defaultSchedule;
     } else if (!currentSchedule) {
-        return customThrowError(400, 'Employee schedule not found');
+        return raiseHttpError(400, 'Employee schedule not found');
     }
 
     // if weekend don't allow time in in department schedule
     const currentDay = format(initializeDateTimeZone(body.timeOut), 'EEEE');
 
     if (isDepartmentSchedule && (currentDay === 'Saturday' || currentDay === 'Sunday')) {
-        return customThrowError(400, 'Weekend not allowed to time out');
+        return raiseHttpError(400, 'Weekend not allowed to time out');
     }
 
     // Fetch current attendance record
@@ -288,13 +286,13 @@ async function timeOut(req: Request, res: Response) {
     });
 
     if (!currentAttendance) {
-        return customThrowError(400, 'Attendance record not found');
+        return raiseHttpError(400, 'Attendance record not found');
     } else if (currentAttendance.timeOut) {
-        return customThrowError(400, 'Already clocked out');
+        return raiseHttpError(400, 'Already clocked out');
     } else if (!currentAttendance.timeIn) {
-        return customThrowError(400, 'Time in is required');
+        return raiseHttpError(400, 'Time in is required');
     } else if (currentAttendance.status === 'BREAK') {
-        return customThrowError(400, 'Time currently on break');
+        return raiseHttpError(400, 'Time currently on break');
     }
 
     // Use only time components for calculations
@@ -320,7 +318,7 @@ async function timeOut(req: Request, res: Response) {
 
     // validate if time out is earlier than the scheduled start time for fixed schedule
     if (currentSchedule.scheduleType === 'FIXED' && isAfter(scheduledStartTime, timeOutFixed)) {
-        return customThrowError(400, 'Time out is earlier than the scheduled start time ' + format(scheduledStartTime, 'hh:mm a'));
+        return raiseHttpError(400, 'Time out is earlier than the scheduled start time ' + format(scheduledStartTime, 'hh:mm a'));
     }
 
     if (totalHoursWorked > 8) {
@@ -377,10 +375,10 @@ async function timeOut(req: Request, res: Response) {
 // Accepting overtime request and calculating the total hours worked with overtime
 async function requestOverTimeRequest(req: Request, res: Response) {
     if (!req.body.employeeId) {
-        return customThrowError(400, 'Employee ID is required');
+        return raiseHttpError(400, 'Employee ID is required');
     }
     if (!req.body.timeStamp) {
-        return customThrowError(400, 'Time stamp is required');
+        return raiseHttpError(400, 'Time stamp is required');
     }
 
     const body = {
@@ -390,11 +388,11 @@ async function requestOverTimeRequest(req: Request, res: Response) {
     };
 
     if (isNaN(body.timeStamp.getTime())) {
-        return customThrowError(400, 'Invalid time out');
+        return raiseHttpError(400, 'Invalid time out');
     } else if (body.requestTotalOvertime < 0) {
-        return res.status(400).send("Overtime request must be greater than 0");
+        return raiseHttpError(400, "Overtime request must be greater than 0");
     } else if (body.requestTotalOvertime > 4) {
-        return res.status(400).send("Overtime request must not exceed 5 hours");
+        return raiseHttpError(400, "Overtime request must not exceed 5 hours");
     }
 
     // Check if employee exists
@@ -410,9 +408,9 @@ async function requestOverTimeRequest(req: Request, res: Response) {
     });
 
     if (!currentEmployee) {
-        return customThrowError(404, 'Employee not found');
+        return raiseHttpError(404, 'Employee not found');
     } else if (!currentEmployee.role || !currentEmployee.departmentId) {
-        return customThrowError(400, 'Employee is not assigned to a department');
+        return raiseHttpError(400, 'Employee is not assigned to a department');
     }
 
     // Get employee's schedule
@@ -430,7 +428,7 @@ async function requestOverTimeRequest(req: Request, res: Response) {
     // const isDepartmentSchedule = !currentEmployee.PersonalSchedule?.Schedule && currentDepartmentSchedule?.Schedule;
 
     if (!schedule) {
-        return customThrowError(400, 'Employee schedule not found');
+        return raiseHttpError(400, 'Employee schedule not found');
     }
 
     // Fetch current attendance record
@@ -442,7 +440,7 @@ async function requestOverTimeRequest(req: Request, res: Response) {
     });
 
     if (!currentAttendance) {
-        return customThrowError(400, 'Attendance record not found');
+        return raiseHttpError(400, 'Attendance record not found');
     }
 
     const timeInFixed = initializeHourTimeZone(currentAttendance.timeIn, timeZone);
@@ -484,18 +482,18 @@ async function requestOverTimeRequest(req: Request, res: Response) {
 async function acceptOvertimeRequest(req: Request, res: Response) {
     let DONE_ATTENDANCE = false;
     if (!req.body.employeeId) {
-        return customThrowError(400, 'Employee ID is required');
+        return raiseHttpError(400, 'Employee ID is required');
     }
     if (!req.body.timeStamp) {
         DONE_ATTENDANCE = true;
     }
 
     if (req.body.isAllowedOvertime === undefined) {
-        return customThrowError(400, 'isAllowedOvertime overtime is required');
+        return raiseHttpError(400, 'isAllowedOvertime overtime is required');
     }
 
     if (req.body.isRejectedOvertime === undefined) {
-        return customThrowError(400, 'isRejectedOvertime overtime is required');
+        return raiseHttpError(400, 'isRejectedOvertime overtime is required');
     }
 
 
@@ -519,9 +517,9 @@ async function acceptOvertimeRequest(req: Request, res: Response) {
     });
 
     if (!currentEmployee) {
-        return customThrowError(404, 'Employee not found');
+        return raiseHttpError(404, 'Employee not found');
     } else if (!currentEmployee.role || !currentEmployee.departmentId) {
-        return customThrowError(400, 'Employee is not assigned to a department');
+        return raiseHttpError(400, 'Employee is not assigned to a department');
     }
 
     const currentDate = DONE_ATTENDANCE ? new Date() : body.timeStamp;
@@ -530,18 +528,18 @@ async function acceptOvertimeRequest(req: Request, res: Response) {
     const currentAttendance = await prisma.attendance.findFirst({
         where: {
             employeeId: body.employeeId,
-            date: format(currentDate, 'MMMM d, yyyy'),
+            date: formatDate(currentDate),
         },
     });
 
     if (!currentAttendance) {
-        return customThrowError(400, 'Attendance record not found');
+        return raiseHttpError(400, 'Attendance record not found');
     }
 
-    body.timeStamp = initializeHourTimeZone(currentAttendance.timeOut || new Date())
+    body.timeStamp = initializeHourTimeZone(currentAttendance.timeOut || body.timeStamp)
 
     if (isNaN(body.timeStamp.getTime())) {
-        return customThrowError(400, 'Invalid time out');
+        return raiseHttpError(400, 'Invalid time out');
     } else if (body.requestTotalOvertime < 0) {
         return res.status(400).send("Overtime request must be greater than 0");
     } else if (body.requestTotalOvertime > 4) {
@@ -562,12 +560,12 @@ async function acceptOvertimeRequest(req: Request, res: Response) {
     // const isDepartmentSchedule = !currentEmployee.PersonalSchedule?.Schedule && currentDepartmentSchedule?.Schedule;
 
     if (!schedule) {
-        return customThrowError(400, 'Employee schedule not found');
+        return raiseHttpError(400, 'Employee schedule not found');
     }
 
 
     if (!currentAttendance) {
-        return customThrowError(400, 'Attendance record not found');
+        return raiseHttpError(400, 'Attendance record not found');
     }
 
     const timeInFixed = initializeHourTimeZone(currentAttendance.timeIn, timeZone);
@@ -612,7 +610,7 @@ async function getAttendanceOfEmployeeToday(req: Request, res: Response) {
     const employeeId = Number(req.params.id);
 
     if (isNaN(employeeId)) {
-        return customThrowError(400, 'Employee ID is required');
+        return raiseHttpError(400, 'Employee ID is required');
     }
 
     const employee = await prisma.employee.findUnique({
@@ -620,7 +618,7 @@ async function getAttendanceOfEmployeeToday(req: Request, res: Response) {
     });
 
     if (!employee) {
-        return customThrowError(404, 'Employee not found');
+        return raiseHttpError(404, 'Employee not found');
     }
 
     // Get today's date in Asia/Manila time zone
