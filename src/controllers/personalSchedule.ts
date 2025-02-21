@@ -1,266 +1,174 @@
 import { initializeHourTimeZone } from '../utils/date';
-import { prisma } from '../config/database';
-import { customThrowError } from '../middlewares/errorHandler';
+import { raiseHttpError } from '../middlewares/errorHandler';
 import { validateCreatePersonalSchedule } from '../validation/schedule.validation';
 import { Request, Response } from 'express';
 import { isAfter } from 'date-fns';
 import { validateUpdatePersonalSchedule } from '../validation/scheduleUpdate.validation';
+import PersonalScheduleService from '../services/personalSchedule.service';
+import EmployeeService from '../services/employee.service';
 
+export const PersonalScheduleController = {
+    // GET /personal-schedule
+    async getAllPersonalSchedules(req: Request, res: Response) {
+        const personalSchedules = await PersonalScheduleService.getAllPersonalSchedules();
+        res.status(200).send(personalSchedules);
+    },
 
-// TODO: Implement the validation of the personal schedule
-// GET /personal-schedule
-async function getAllPersonalSchedules(req: Request, res: Response) {
-    const personalSchedules = await prisma.personalSchedule.findMany({
-        include: { Schedule: true, Employee: true }
-    });
-
-
-    res.status(200).send(personalSchedules);
-}
-
-// GET /personal-schedule/:id
-async function getPersonalScheduleById(req: Request, res: Response) {
-    const personalScheduleId = Number(req.params.id);
-    if (!personalScheduleId) {
-        return customThrowError(400, "Invalid personal schedule ID");
-    }
-
-    const existingPersonalSchedule = await prisma.personalSchedule.findFirst({
-        where: { id: personalScheduleId },
-        include: { Schedule: true }
-    });
-
-    if (!existingPersonalSchedule) {
-        return customThrowError(404, "Personal schedule not found");
-    }
-
-    return res.status(200).send(existingPersonalSchedule);
-}
-
-// POST /personal-schedule
-async function createPersonalSchedule(req: Request, res: Response) {
-    const employeeId = Number(req.body.employeeId);
-    if (!employeeId) {
-        return customThrowError(400, "Invalid employee ID");
-    }
-
-    const employee = await prisma.employee.findUnique({
-        where: { id: employeeId },
-        include: { PersonalSchedule: true }
-    });
-
-    if (!employee) {
-        return customThrowError(404, "Employee not found");
-    }
-
-    const existingPersonalSchedule = await prisma.personalSchedule.findUnique({
-        where: { employeeId: employee.id },
-        include: { Employee: true }
-    });
-
-    if (existingPersonalSchedule) {
-        return customThrowError(400, "Employee already has a personal schedule");
-    }
-
-    const startTime = initializeHourTimeZone(req.body.startTime);
-    const endTime = initializeHourTimeZone(req.body.endTime);
-    console.log(req.body.startTime, req.body.endTime, startTime, endTime, "hello boi");
-
-    // validate schedule
-    if (isAfter(startTime, endTime)) {
-        return customThrowError(400, "Start time must be before end time");
-    }
-
-    validateCreatePersonalSchedule({
-        employeeId: Number(req.body.employeeId),
-        name: req.body.name,
-        startTime: startTime,
-        endTime: endTime,
-        scheduleType: req.body.scheduleType,
-        // startTimeLimit: req.body.startTimeLimit,
-        // limitWorkHoursDay: req.body.limitWorkHoursDay,
-        // allowedOvertime: req.body.allowedOvertime,
-    });
-
-    // validate request body of days
-    if (req.body.day) {
-        if (!Array.isArray(req.body.day)) {
-            return customThrowError(400, "Invalid list of days");
+    // GET /personal-schedule/:id
+    async getPersonalScheduleById(req: Request, res: Response) {
+        const personalScheduleId = Number(req.params.id);
+        if (!personalScheduleId) {
+            throw raiseHttpError(400, "Invalid personal schedule ID");
         }
 
-        if (req.body.day.length === 0) {
-            return customThrowError(400, "List of days is empty");
+        const existingPersonalSchedule = await PersonalScheduleService.findPersonalScheduleById(personalScheduleId);
+
+        if (!existingPersonalSchedule) {
+            throw raiseHttpError(404, "Personal schedule not found");
         }
 
-        const days = req.body.day;
-        const daysOfWeek = ['SUNDAY', 'MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY'];
-        for (const day of days) {
-            if (!daysOfWeek.includes(day)) {
-                return customThrowError(400, "Invalid day in days array");
-            }
-        }
-    }
+        return res.status(200).send(existingPersonalSchedule);
+    },
 
-    const schedule = await prisma.schedule.create({
-        data: {
+    // POST /personal-schedule
+    async createPersonalSchedule(req: Request, res: Response) {
+        const employeeId = Number(req.body.employeeId);
+        if (!employeeId) {
+            throw raiseHttpError(400, "Invalid employee ID");
+        }
+
+        const employee = await EmployeeService.getEmployeeById(employeeId);
+
+        if (!employee) {
+            throw raiseHttpError(404, "Employee not found");
+        }
+
+        const existingPersonalSchedule = await PersonalScheduleService.findPersonalScheduleByEmployeeId(employeeId);
+        if (existingPersonalSchedule) {
+            throw raiseHttpError(400, "Employee already has a personal schedule");
+        }
+
+        const startTime = initializeHourTimeZone(req.body.startTime);
+        const endTime = initializeHourTimeZone(req.body.endTime);
+
+        // validate schedule
+        if (isAfter(startTime, endTime)) {
+            throw raiseHttpError(400, "Start time must be before end time");
+        }
+
+        const body = {
+            employeeId: Number(req.body.employeeId),
+            name: req.body.name,
             scheduleType: req.body.scheduleType,
             startTime: startTime,
             endTime: endTime,
-            // limitWorkHoursDay: req.body.limitWorkHoursDay,
-            // allowedOvertime: req.body.allowedOvertime,
-        },
-    });
+            day: req.body.day,
+        };
 
-    const personalSchedule = await prisma.personalSchedule.create({
-        data: {
-            employeeId: employee.id,
-            scheduleId: schedule.id,
-            name: req.body.name,
-            day: [...req.body.day],
-        },
-    });
+        validateCreatePersonalSchedule(body);
 
-    res.status(201).send(personalSchedule);
-}
+        const existingEmployee = await EmployeeService.getEmployeeById(body.employeeId);
+        if (!existingEmployee) {
+            throw raiseHttpError(404, "Employee not found");
+        }
 
-// PUT /personal-schedule/:id
-async function updatePersonalSchedule(req: Request, res: Response) {
-    const personalScheduleId = Number(req.params.id);
-    if (!personalScheduleId) {
-        return customThrowError(400, "Invalid personal schedule ID");
-    }
-
-    // TODO: Implement the validation CHANGE EMPLOYEE ID
-    const personalSchedule = await prisma.personalSchedule.findFirst({
-        where: { id: personalScheduleId },
-        include: { Schedule: true }
-    });
-
-    if (!personalSchedule) {
-        return customThrowError(404, "Personal schedule not found");
-    }
-
-    // const employee = await prisma.employee.findFirst({
-    //     where: { id: personalSchedule.employeeId },
-    // });
-
-    // if (!employee) {
-    //     return customThrowError(404, "No employee found for this personal schedule");
-    // }
-
-    // validate request body of days
-    if (req.body.day) {
+        // validate request body of days
         if (!Array.isArray(req.body.day)) {
-            return customThrowError(400, "Days must be an array");
+            throw raiseHttpError(400, "Invalid list of days");
         }
 
         if (req.body.day.length === 0) {
-            return customThrowError(400, "Days must not be empty");
+            throw raiseHttpError(400, "List of days is empty");
         }
 
-        const days = req.body.day;
+        const days = body.day;
         const daysOfWeek = ['SUNDAY', 'MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY'];
         for (const day of days) {
             if (!daysOfWeek.includes(day)) {
-                return customThrowError(400, "Invalid day in days array");
+                throw raiseHttpError(400, "Invalid day in days array");
             }
         }
+
+        const personalSchedule = await PersonalScheduleService.createPersonalSchedule({ ...body });
+        res.status(201).send(personalSchedule);
+    },
+
+    // PUT /personal-schedule/:id
+    async updatePersonalSchedule(req: Request, res: Response) {
+        const personalScheduleId = Number(req.params.id);
+        if (!personalScheduleId) {
+            throw raiseHttpError(400, "Invalid personal schedule ID");
+        }
+
+        const existingPersonalSchedule = await PersonalScheduleService.findPersonalScheduleById(personalScheduleId);
+        if (!existingPersonalSchedule) {
+            return raiseHttpError(404, "Personal schedule not found");
+        }
+
+        const startTime = initializeHourTimeZone(req.body.startTime);
+        const endTime = initializeHourTimeZone(req.body.endTime);
+        // validate schedule
+        if (startTime >= endTime) {
+            throw raiseHttpError(400, "Start time must be before end time");
+        }
+
+        const body = {
+            employeeId: Number(req.body.employeeId),
+            name: req.body.name,
+            scheduleType: req.body.scheduleType,
+            startTime: startTime,
+            endTime: endTime,
+            day: req.body.day,
+        };
+
+        validateUpdatePersonalSchedule(body);
+        const existingEmployee = await EmployeeService.getEmployeeById(body.employeeId);
+        if (!existingEmployee) {
+            throw raiseHttpError(404, "Employee not found");
+        }
+
+
+        if (!Array.isArray(body.day)) {
+            throw raiseHttpError(400, "Days must be an array");
+        }
+
+        if (body.day.length === 0) {
+            throw raiseHttpError(400, "Days must not be empty");
+        }
+
+        const days = body.day;
+        const daysOfWeek = ['SUNDAY', 'MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY'];
+        const invalidDays = days.filter(day => !daysOfWeek.includes(day));
+        if (invalidDays.length > 0) {
+            throw raiseHttpError(400, `Invalid days found: ${invalidDays.join(', ')}`);
+        }
+
+
+        const updatedData = { ...existingPersonalSchedule, ...body };
+        await PersonalScheduleService.updatePersonalSchedule(personalScheduleId, updatedData);
+        return res.status(201).send("Schedule updated successfully");
+    },
+
+    // DELETE /personal-schedule/:id
+    async removePersonalSchedule(req: Request, res: Response) {
+        const personalScheduleId = Number(req.params.id);
+        if (!personalScheduleId) {
+            throw raiseHttpError(400, "Invalid personal schedule ID");
+        }
+
+        const existingPersonalSchedule = await PersonalScheduleService.findPersonalScheduleById(personalScheduleId);
+        if (!existingPersonalSchedule) {
+            throw raiseHttpError(404, "Personal schedule not found");
+        }
+
+        const schedule = await PersonalScheduleService.findPersonalScheduleById(personalScheduleId);
+
+        if (!schedule) {
+            throw raiseHttpError(404, "Schedule not found");
+        }
+
+        await PersonalScheduleService.deleteSchedule(personalScheduleId);
+        return res.status(200).send(`Personal schedule of ${schedule.Employee.lastName} has been deleted`);
     }
-
-    const startTime = initializeHourTimeZone(req.body.startTime);
-    const endTime = initializeHourTimeZone(req.body.endTime);
-    // validate schedule
-    if (startTime >= endTime) {
-        return customThrowError(400, "Start time must be before end time");
-    }
-
-    const body = {
-        employeeId: Number(req.body.employeeId),
-        name: req.body.name ?? personalSchedule.name,
-        scheduleType: req.body.scheduleType ?? personalSchedule.Schedule.scheduleType,
-        startTime: startTime,
-        endTime: endTime,
-        // limitWorkHoursDay: req.body.limitWorkHoursDay,
-        // allowedOvertime: req.body.allowedOvertime,
-    };
-
-    validateUpdatePersonalSchedule(body);
-
-    // check if new employee id is existing
-    const newEmployee = await prisma.employee.findFirst({
-        where: { id: body.employeeId },
-    });
-
-    if (!newEmployee) {
-        return customThrowError(404, "Employee not found");
-    }
-
-    // validate schedule
-    if (startTime >= endTime) {
-        return customThrowError(400, "Start time must be before end time");
-    }
-
-    await prisma.schedule.update({
-        where: { id: personalSchedule.scheduleId },
-        data: {
-            scheduleType: body.scheduleType ?? personalSchedule.Schedule.scheduleType,
-            startTime: body.startTime ?? personalSchedule.Schedule.startTime,
-            endTime: body.endTime ?? personalSchedule.Schedule.endTime,
-            // limitWorkHoursDay: body.limitWorkHoursDay ?? personalSchedule.Schedule.limitWorkHoursDay,
-            // allowedOvertime: body.allowedOvertime ?? personalSchedule.Schedule.allowedOvertime,
-        },
-    });
-
-    const result = await prisma.personalSchedule.update({
-        where: { id: personalSchedule.id },
-        data: {
-            name: body.name ?? personalSchedule.name,
-            day: req.body.day ?? personalSchedule.day,
-            employeeId: body.employeeId,
-        },
-    });
-
-    console.log(result);
-
-
-    return res.status(201).send("Schedule updated successfully");
-}
-
-// DELETE /personal-schedule/:id
-async function removePersonalSchedule(req: Request, res: Response) {
-    const personalScheduleId = Number(req.params.id);
-    if (!personalScheduleId) {
-        return customThrowError(400, "Invalid personal schedule ID");
-    }
-
-    const existingPersonalSchedule = await prisma.personalSchedule.findUnique({
-        where: { id: personalScheduleId },
-    });
-
-    if (!existingPersonalSchedule) {
-        return customThrowError(404, "Personal schedule not found");
-    }
-
-    const schedule = await prisma.schedule.findFirst({
-        where: { id: existingPersonalSchedule.scheduleId }
-    });
-
-    if (!schedule) {
-        return customThrowError(404, "Schedule not found");
-    }
-
-    // delete schedule
-    await prisma.schedule.delete({
-        where: { id: schedule.id },
-    });
-
-    return res.status(200).send("Personal schedule removed successfully");
-}
-
-export default {
-    getAllPersonalSchedules,
-    getPersonalScheduleById,
-    createPersonalSchedule,
-    updatePersonalSchedule,
-    removePersonalSchedule,
 };
+

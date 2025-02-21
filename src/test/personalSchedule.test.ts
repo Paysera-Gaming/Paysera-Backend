@@ -2,18 +2,15 @@ import { server } from '..';
 import request from 'supertest';
 import { Employee, PersonalSchedule, Prisma } from '@prisma/client';
 import { prisma } from '../config/database';
+import { before } from 'node:test';
 
 describe('Personal Schedule API', () => {
 
     let employee: Employee;
     let personalSchedule: PersonalSchedule;
-
-    it('should create a new personal schedule', async () => {
+    before(async () => {
         const employeeRest = await request(server).get('/api/employee');
         employee = employeeRest.body[0];
-        console.log(employee.firstName, "employee1st");
-
-
         const schedule = await prisma.schedule.create({
             data: {
                 scheduleType: "FIXED",
@@ -30,27 +27,28 @@ describe('Personal Schedule API', () => {
                 day: ["MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY",],
             },
         });
+    });
 
-
-        let employee2 = employeeRest.body[2];
+    it('should create a new personal schedule', async () => {
+        const employeeRest = await request(server).get('/api/employee');
+        employee = employeeRest.body[0];
+        const employee2 = employeeRest.body[2];
         const res = await request(server).post('/api/personal-schedule').send({
             employeeId: employee2.id,
             name: 'Test Schedule',
             scheduleType: "FIXED",
             startTime: new Date(2024, 8, 1, 9, 0, 0),
             endTime: new Date(2024, 8, 1, 17, 0, 0),
-            limitWorkHoursDay: 8,
-            allowedOvertime: false,
             day: ["MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY"],
         });
 
         expect(res.status).toBe(201);
     });
 
-    it('should return error because a employee have a schedule', async () => {
-        let temp = employee
+    it('should return error because employee id not exist', async () => {
+        const nonExistentId = 9999;
         const res = await request(server).post('/api/personal-schedule').send({
-            employeeId: temp.id,
+            employeeId: nonExistentId,
             name: 'Test Schedule',
             scheduleType: "FIXED",
             startTime: new Date(2024, 8, 1, 9, 0, 0),
@@ -60,18 +58,8 @@ describe('Personal Schedule API', () => {
             day: ["MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY"],
         });
 
-        console.log(res.body, "wewewe", temp.firstName);
-        const data = await prisma.personalSchedule.findFirst({
-            where: {
-                employeeId: temp.id
-            }, include: {
-                Employee: true
-            }
-        });
 
-        console.log(data, "data");
-
-        expect(res.status).toBe(400);
+        expect(res.status).toBe(404);
     });
 
     it('should get all personal schedules', async () => {
@@ -93,13 +81,15 @@ describe('Personal Schedule API', () => {
             .put(`/api/personal-schedule/${personalSchedule.id}`)
             .send({
                 employeeId: employee.id,
-                name: 'Test Schedule',
+                name: 'Updated Test Schedule',
                 scheduleType: "FIXED",
                 startTime: new Date(2024, 8, 1, 9, 0, 0),
                 endTime: new Date(2024, 8, 1, 17, 0, 0),
-                limitWorkHoursDay: 8,
-                allowedOvertime: false,
+                day: ["SATURDAY"]
             });
+
+        console.log(res.body, "wew");
+
         expect(res.status).toBe(201);
     });
 
@@ -113,8 +103,8 @@ describe('Personal Schedule API', () => {
                 scheduleType: "FIXED",
                 startTime: new Date(2024, 8, 1, 9, 0, 0),
                 endTime: new Date(2024, 8, 1, 2, 0, 0),
-                limitWorkHoursDay: 8,
-                allowedOvertime: false,
+                day: ["SATURDAY"]
+
             });
         expect(res.status).toBe(400);
     });
