@@ -1,23 +1,22 @@
 import express from "express";
-import employee from "../controllers/employee";
+import { EmployeeController } from "../controllers/employee";
 import { asyncHandler } from "../middlewares/errorHandler";
-import { adminMiddleware, teamLeaderMiddleware } from "../middlewares";
+import { teamLeaderMiddleware } from "../middlewares";
 
 const routerEmployee = express.Router();
 
-routerEmployee.route("/team-leader").get(asyncHandler(employee.getAllTeamLeaders));
-routerEmployee.route("/only-employee").get(asyncHandler(employee.getAllOnlyEmployee));
-routerEmployee.route("/admin").get(asyncHandler(employee.getAllAdmin));
+routerEmployee.route("/team-leader").get(asyncHandler(EmployeeController.getAllTeamLeaders));
+routerEmployee.route("/only-employee").get(asyncHandler(EmployeeController.getAllOnlyEmployee));
+routerEmployee.route("/admin").get(asyncHandler(EmployeeController.getAllAdmin));
 
 routerEmployee
     .route("/")
-    .get(asyncHandler(employee.getAllEmployees))
-    .post(teamLeaderMiddleware, asyncHandler(employee.createEmployee));
+    .get(asyncHandler(EmployeeController.getAllEmployees))
+    .post(teamLeaderMiddleware, asyncHandler(EmployeeController.createEmployee));
 routerEmployee
     .route("/:id")
-    .get(asyncHandler(employee.getEmployeeById))
-    .delete(teamLeaderMiddleware, asyncHandler(employee.deleteEmployeeById))
-    .put(teamLeaderMiddleware, asyncHandler(employee.updateEmployee));
-
+    .get(asyncHandler(EmployeeController.getEmployeeById))
+    .delete(teamLeaderMiddleware, asyncHandler(EmployeeController.deleteEmployeeById))
+    .put(teamLeaderMiddleware, asyncHandler(EmployeeController.updateEmployee));
 
 export default routerEmployee;

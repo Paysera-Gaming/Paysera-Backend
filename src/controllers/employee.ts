@@ -1,68 +1,120 @@
 import { Request, Response } from "express";
+import bcrypt from 'bcryptjs';
 import EmployeeService from "../services/employee.service";
 import { io } from "..";
+import { validateCreateOneEmployee, validateUpdateEmployee } from "../validation/employee.validation";
+import { prisma } from "../config/database";
+import { raiseHttpError } from "../middlewares/errorHandler";
 
-async function getAllEmployees(req: Request, res: Response) {
-    const departmentId = req.query.department ? Number(req.query.department) : undefined;
-    const role = req.query.role ? String(req.query.role).toUpperCase() : undefined;
+export const EmployeeController = {
+    async getAllEmployees(req: Request, res: Response) {
+        const departmentId = req.query.department ? Number(req.query.department) : undefined;
+        const role = req.query.role ? String(req.query.role).toUpperCase() : undefined;
 
-    const allEmployees = await EmployeeService.getAllEmployees(departmentId, role);
-    res.status(200).send(allEmployees);
-}
+        const allEmployees = await EmployeeService.getAllEmployees(departmentId, role);
+        res.status(200).send(allEmployees);
+    },
 
-async function getAllTeamLeaders(req: Request, res: Response) {
-    const allTeamLeaders = await EmployeeService.getAllTeamLeaders();
-    res.status(200).send(allTeamLeaders);
-}
+    async getAllTeamLeaders(req: Request, res: Response) {
+        const allTeamLeaders = await EmployeeService.getAllTeamLeaders();
+        res.status(200).send(allTeamLeaders);
+    },
 
-async function getAllOnlyEmployee(req: Request, res: Response) {
-    const { role } = req.query;
-    const allTeamMembers = await EmployeeService.getAllOnlyEmployee(role ? String(role) : undefined);
-    res.status(200).send(allTeamMembers);
-}
+    async getAllOnlyEmployee(req: Request, res: Response) {
+        const allTeamMembers = await EmployeeService.getAllOnlyEmployee();
+        res.status(200).send(allTeamMembers);
+    },
 
-async function getAllAdmin(req: Request, res: Response) {
-    const allAdmins = await EmployeeService.getAllAdmin();
-    res.status(200).send(allAdmins);
-}
+    async getAllAdmin(req: Request, res: Response) {
+        const allAdmins = await EmployeeService.getAllAdmin();
+        res.status(200).send(allAdmins);
+    },
 
-async function getEmployeeById(req: Request, res: Response) {
-    const employeeId = Number(req.params.id) || -1;
-    const employee = await EmployeeService.getEmployeeById(employeeId);
-    res.status(200).send(employee);
-}
+    async getEmployeeById(req: Request, res: Response) {
+        const employeeId = Number(req.params.id) || -1;
+        const employee = await EmployeeService.getEmployeeById(employeeId);
+        if (!employee) {
+            throw raiseHttpError(404, "Employee not found");
+        }
+        res.status(200).send(employee);
+    },
 
-async function createEmployee(req: Request, res: Response) {
-    await EmployeeService.createEmployee(req.body);
+    async createEmployee(req: Request, res: Response) {
+        const data = req.body;
+        validateCreateOneEmployee(data);
 
-    io.emit("employee");
-    res.status(201).send();
-}
+        const existingEmployeeUsername = await prisma.employee.findFirst({
+            where: {
+                username: data.username,
+            },
+        });
 
-async function updateEmployee(req: Request, res: Response) {
-    const employeeId = Number(req.params.id) || -1;
-    await EmployeeService.updateEmployee(employeeId, req.body);
+        if (existingEmployeeUsername) {
+            throw raiseHttpError(400, "Username already used");
+        }
 
-    io.emit("employee");
-    res.status(200).send("Employee updated successfully");
-}
+        const existingEmployeeEmail = await prisma.employee.findFirst({
+            where: {
+                email: data.email,
+            },
+        });
 
-async function deleteEmployeeById(req: Request, res: Response) {
-    const employeeId = Number(req.params.id) || -1;
-    const currentUserId = req.body.info.id;
-    await EmployeeService.deleteEmployeeById(employeeId, currentUserId);
+        if (existingEmployeeEmail) {
+            throw raiseHttpError(400, "Email already used");
+        }
 
-    io.emit("employee");
-    res.status(200).send("Employee deleted successfully");
-}
+        const hashedPassword = await bcrypt.hash(data.passwordCredentials, 10);
+        await EmployeeService.createEmployee({ ...data, passwordCredentials: hashedPassword });
 
-export default {
-    getAllEmployees,
-    getAllTeamLeaders,
-    getAllOnlyEmployee,
-    getAllAdmin,
-    getEmployeeById,
-    createEmployee,
-    updateEmployee,
-    deleteEmployeeById
+        io.emit("employee");
+        res.status(201).send("Employee created successfully");
+    },
+
+    async updateEmployee(req: Request, res: Response) {
+        const employeeId = Number(req.params.id) || -1;
+        const data = req.body;
+        validateUpdateEmployee(data);
+
+        const existingEmployee = await prisma.employee.findUnique({
+            where: { id: employeeId },
+        });
+
+        if (!existingEmployee) {
+            throw raiseHttpError(404, "Employee not found");
+        }
+
+        const updatedEmployee = {
+            ...existingEmployee,
+            ...data,
+        };
+
+        await EmployeeService.updateEmployee(employeeId, updatedEmployee);
+
+        io.emit("employee");
+        res.status(200).send("Employee updated successfully");
+    },
+
+    async deleteEmployeeById(req: Request, res: Response) {
+        const employeeId = Number(req.params.id) || -1;
+        const currentUserId = req.body.info.id;
+
+        if (currentUserId === employeeId) {
+            throw raiseHttpError(400, "You can't delete yourself");
+        }
+
+        const existingEmployee = await prisma.employee.findUnique({
+            where: { id: employeeId },
+        });
+
+        if (!existingEmployee) {
+            throw raiseHttpError(404, "Employee not found");
+        }
+
+        await EmployeeService.deleteEmployeeById(employeeId);
+
+        io.emit("employee");
+        res.status(200).send("Employee deleted successfully");
+    }
 };
+
+export default EmployeeController;

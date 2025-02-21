@@ -1,10 +1,9 @@
-import bcrypt from 'bcryptjs';
 import { prisma } from "../config/database";
-import { validateCreateOneEmployee, validateUpdateEmployee } from "../validation/employee.validation";
-import { customThrowError } from '../middlewares/errorHandler';
+import { raiseHttpError } from '../middlewares/errorHandler';
+import { Employee } from '@prisma/client';
 
-class EmployeeService {
-    async getAllEmployees(departmentId?: number, role?: string) {
+export class EmployeeService {
+    static async getAllEmployees(departmentId?: number, role?: string) {
         const allEmployees = await prisma.employee.findMany({
             where: {
                 departmentId,
@@ -30,7 +29,7 @@ class EmployeeService {
         return allEmployees;
     }
 
-    async getAllTeamLeaders() {
+    static async getAllTeamLeaders() {
         const allTeamLeaders = await prisma.employee.findMany({
             where: {
                 accessLevel: "TEAM_LEADER",
@@ -51,11 +50,7 @@ class EmployeeService {
         return allTeamLeaders;
     }
 
-    async getAllOnlyEmployee(role?: string) {
-        if (role && !["EMPLOYEE", "TEAM_LEADER", "ADMIN"].includes(role)) {
-            throw customThrowError(400, "Invalid role");
-        }
-
+    static async getAllOnlyEmployee() {
         const allTeamMembers = await prisma.employee.findMany({
             where: {
                 accessLevel: "EMPLOYEE",
@@ -76,7 +71,7 @@ class EmployeeService {
         return allTeamMembers;
     }
 
-    async getAllAdmin() {
+    static async getAllAdmin() {
         const allAdmins = await prisma.employee.findMany({
             where: {
                 accessLevel: "ADMIN",
@@ -97,7 +92,7 @@ class EmployeeService {
         return allAdmins;
     }
 
-    async getEmployeeById(employeeId: number) {
+    static async getEmployeeById(employeeId: number) {
         const employee = await prisma.employee.findFirst({
             where: {
                 id: employeeId,
@@ -115,38 +110,10 @@ class EmployeeService {
             },
         });
 
-        if (!employee) {
-            throw customThrowError(404, "Employee not found");
-        }
-
         return employee;
     }
 
-    async createEmployee(data: any) {
-        validateCreateOneEmployee(data);
-
-        const existingEmployeeUsername = await prisma.employee.findFirst({
-            where: {
-                username: data.username,
-            },
-        });
-
-        if (existingEmployeeUsername) {
-            throw customThrowError(400, "Username already exists");
-        }
-
-        const existingEmployeeEmail = await prisma.employee.findFirst({
-            where: {
-                email: data.email,
-            },
-        });
-
-        if (existingEmployeeEmail) {
-            customThrowError(400, "Email already used");
-        }
-
-        const hashedPassword = await bcrypt.hash(data.passwordCredentials, 10);
-
+    static async createEmployee(data: Employee) {
         await prisma.employee.create({
             data: {
                 email: data.email,
@@ -156,57 +123,35 @@ class EmployeeService {
                 middleName: data.middleName,
                 accessLevel: data.accessLevel,
                 isActive: data.isActive,
-                passwordCredentials: hashedPassword,
+                passwordCredentials: data.passwordCredentials,
                 role: data.role,
             },
         });
     }
 
-    async updateEmployee(employeeId: number, data: any) {
-        validateUpdateEmployee(data);
-
-        const existingEmployee = await prisma.employee.findUnique({
-            where: { id: employeeId },
-        });
-
-        if (!existingEmployee) {
-            throw customThrowError(404, "Employee not found");
-        }
-
+    static async updateEmployee(employeeId: number, data: any) {
         await prisma.employee.update({
             where: { id: employeeId },
             data: {
-                email: data.email ?? existingEmployee.email,
-                username: data.username ?? existingEmployee.username,
-                firstName: data.firstName ?? existingEmployee.firstName,
-                lastName: data.lastName ?? existingEmployee.lastName,
-                middleName: data.middleName ?? existingEmployee.middleName,
-                accessLevel: data.accessLevel ?? existingEmployee.accessLevel,
-                isActive: data.isActive ?? existingEmployee.isActive,
-                departmentId: data.departmentId ?? existingEmployee.departmentId,
-                role: data.role ?? existingEmployee.role,
-                passwordCredentials: data.password ? await bcrypt.hash(data.password, 10) : existingEmployee.passwordCredentials,
+                email: data.email,
+                username: data.username,
+                firstName: data.firstName,
+                lastName: data.lastName,
+                middleName: data.middleName,
+                accessLevel: data.accessLevel,
+                isActive: data.isActive,
+                departmentId: data.departmentId,
+                role: data.role,
+                passwordCredentials: data.password,
             },
         });
     }
 
-    async deleteEmployeeById(employeeId: number, currentUserId: number) {
-        if (currentUserId === employeeId) {
-            throw customThrowError(400, "You can't delete yourself");
-        }
-
-        const existingEmployee = await prisma.employee.findUnique({
-            where: { id: employeeId },
-        });
-
-        if (!existingEmployee) {
-            throw customThrowError(404, "Employee not found");
-        }
-
+    static async deleteEmployeeById(employeeId: number,) {
         await prisma.employee.delete({
             where: { id: employeeId },
         });
     }
 }
 
-export default new EmployeeService();
+export default EmployeeService;
