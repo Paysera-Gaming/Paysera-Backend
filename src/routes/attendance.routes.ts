@@ -1,5 +1,5 @@
 import express from "express";
-import attendance from '../controllers/attendance';
+import { AttendanceController } from '../controllers/attendance';
 import { asyncHandler } from "../middlewares/errorHandler";
 import { acceptOvertimeRequest, getAttendanceOfEmployeeToday, requestOverTimeRequest, timeIn, timeOut } from "../controllers/clock";
 import { adminMiddleware } from "../middlewares";
@@ -9,19 +9,19 @@ const routerAttendance = express.Router();
 
 routerAttendance
     .route('/')
-    .get(asyncHandler(attendance.getAllAttendance))
-    .post(asyncHandler(attendance.createAttendance));
+    .get(asyncHandler(AttendanceController.getAllAttendance))
+    .post(asyncHandler(AttendanceController.createAttendance));
 
 routerAttendance
     .route('/:id')
-    .get(asyncHandler(attendance.getAttendanceById))
-    .put(adminMiddleware, asyncHandler(attendance.updateAttendance))
-    .delete(adminMiddleware, asyncHandler(attendance.deleteAttendance));
+    .get(asyncHandler(AttendanceController.getAttendanceById))
+    .put(adminMiddleware, asyncHandler(AttendanceController.updateAttendance))
+    .delete(adminMiddleware, asyncHandler(AttendanceController.deleteAttendance));
 
 routerAttendance
     .route('/employee/:id')
-    .get(asyncHandler(attendance.getAttendanceByEmployeeId))
-    .put(adminMiddleware, asyncHandler(attendance.updateAttendanceByEmployeeId));
+    .get(asyncHandler(AttendanceController.getAttendanceByEmployeeId))
+    .put(adminMiddleware, asyncHandler(AttendanceController.updateAttendanceByEmployeeId));
 
 routerAttendance.get('/today/:id', asyncHandler(getAttendanceOfEmployeeToday));
 
