@@ -12,7 +12,7 @@
                 "skipLibCheck": true,
                 "allowSyntheticDefaultImports": true
         },
-        "include": ["src/**/*", "/src/tests/**/*"],
+        "include": ["src/**/*", "/src/tests/**/*", "sample.ts"],
         "exclude": [
                 "node_modules",
                 "tests",
