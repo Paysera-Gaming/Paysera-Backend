@@ -205,7 +205,7 @@ export class DepartmentService {
         });
     }
 
-    async updateDepartmentAssignEmployee(departmentId: number, role: string, employeeId: number) {
+    static async updateDepartmentAssignEmployee(departmentId: number, role: string, employeeId: number) {
         return await prisma.employee.update({
             where: { id: employeeId },
             data: {
@@ -219,7 +219,7 @@ export class DepartmentService {
         });
     }
 
-    async updateDepartmentRemoveEmployee(employeeId: number) {
+    static async updateDepartmentRemoveEmployee(employeeId: number) {
         return prisma.employee.update({
             where: { id: employeeId },
             data: {
@@ -231,7 +231,7 @@ export class DepartmentService {
         });
     }
 
-    async updateDepartmentAssignLeader(departmentId: number, leaderId: number) {
+    static async updateDepartmentAssignLeader(departmentId: number, leaderId: number) {
         return await prisma.employee.update({
             where: { id: leaderId },
             data: {
@@ -252,7 +252,7 @@ export class DepartmentService {
 
     }
 
-    async updateDepartmentRemoveLeader(leaderId: number) {
+    static async updateDepartmentRemoveLeader(leaderId: number) {
         return await prisma.employee.update({
             where: { id: leaderId },
             data: {
