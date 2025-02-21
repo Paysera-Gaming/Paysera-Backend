@@ -1,19 +1,19 @@
 import express from "express";
 import { asyncHandler } from "../middlewares/errorHandler";
-import holiday from "../controllers/holiday";
+import { HolidayController } from "../controllers/holiday";
 
 const routerHoliday = express.Router();
 
 routerHoliday.route("/")
-    .get(asyncHandler(holiday.getHolidays))
-    .post(asyncHandler(holiday.createHoliday));
+    .get(asyncHandler(HolidayController.getHolidays))
+    .post(asyncHandler(HolidayController.createHoliday));
 
 routerHoliday.route("/:id")
-    .get(asyncHandler(holiday.getHolidayById))
-    .put(asyncHandler(holiday.updateHoliday))
-    .delete(asyncHandler(holiday.deleteHoliday));
+    .get(asyncHandler(HolidayController.getHolidayById))
+    .put(asyncHandler(HolidayController.updateHoliday))
+    .delete(asyncHandler(HolidayController.deleteHoliday));
 
 
-routerHoliday.route("/month/:month/day/:day").get(asyncHandler(holiday.getHolidayByMonthDay));
+routerHoliday.route("/month/:month/day/:day").get(asyncHandler(HolidayController.getHolidayByMonthDay));
 
 export default routerHoliday;

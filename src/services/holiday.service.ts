@@ -1,6 +1,4 @@
 import { Month } from '@prisma/client';
-import { customThrowError } from '../middlewares/errorHandler';
-import { createHolidaySchema, updateHolidaySchema } from '../validation/holiday.validation';
 import { prisma } from '../config/database';
 
 interface HolidayData {
@@ -10,101 +8,48 @@ interface HolidayData {
 }
 
 export class HolidayService {
-    // No need for a constructor or private prisma property
-
     // Create a new holiday
-    async createHoliday(data: HolidayData) {
-        // Validate input data
-        const validatedData = createHolidaySchema.parse(data);
-
-        // Check if holiday already exists
-        const existingHoliday = await prisma.holiday.findFirst({
-            where: {
-                month: validatedData.month,
-                day: validatedData.day,
-            },
-        });
-
-        if (existingHoliday) {
-            throw customThrowError(400, 'Holiday already exists');
-        }
-
-        // Create the holiday
+    static async createHoliday(data: HolidayData) {
         return await prisma.holiday.create({
-            data: validatedData,
+            data: {
+                name: data.name,
+                month: data.month,
+                day: data.day,
+            },
         });
     }
 
     // Get all holidays
-    async getHolidays() {
-        const holidays = await prisma.holiday.findMany({
+    static async getHolidays() {
+        return await prisma.holiday.findMany({
             orderBy: [{ month: 'desc' }, { day: 'desc' }],
         });
-
-        if (!holidays.length) {
-            throw customThrowError(404, 'No holidays found');
-        }
-
-        return holidays;
     }
 
     // Get a holiday by ID
-    async getHolidayById(id: number) {
-        const holiday = await prisma.holiday.findUnique({
+    static async getHolidayById(id: number) {
+        return await prisma.holiday.findUnique({
             where: { id },
         });
-
-        if (!holiday) {
-            throw customThrowError(404, 'Holiday not found');
-        }
-
-        return holiday;
     }
 
     // Get a holiday by month and day
-    async getHolidayByMonthDay(month: Month, day: number) {
-        const holiday = await prisma.holiday.findFirst({
+    static async getHolidayByMonthDay(month: Month, day: number) {
+        return await prisma.holiday.findFirst({
             where: { month, day },
         });
-
-        if (!holiday) {
-            throw customThrowError(404, 'Holiday not found');
-        }
-
-        return holiday;
     }
 
     // Update a holiday by ID
-    async updateHoliday(id: number, data: Partial<HolidayData>) {
-        // Validate input data
-        const validatedData = updateHolidaySchema.parse(data);
-
-        // Check if holiday exists
-        const existingHoliday = await prisma.holiday.findUnique({
-            where: { id },
-        });
-
-        if (!existingHoliday) {
-            throw customThrowError(404, 'Holiday not found');
-        }
-
-        // Update the holiday
+    static async updateHoliday(id: number, data: Partial<HolidayData>) {
         return await prisma.holiday.update({
             where: { id },
-            data: validatedData,
+            data,
         });
     }
 
     // Delete a holiday by ID
-    async deleteHoliday(id: number) {
-        const existingHoliday = await prisma.holiday.findUnique({
-            where: { id },
-        });
-
-        if (!existingHoliday) {
-            throw customThrowError(404, 'Holiday not found');
-        }
-
+    static async deleteHoliday(id: number) {
         await prisma.holiday.delete({
             where: { id },
         });
@@ -112,6 +57,3 @@ export class HolidayService {
         return 'Holiday deleted successfully';
     }
 }
-
-// Export an instance of the service
-export default new HolidayService();
