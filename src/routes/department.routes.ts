@@ -1,7 +1,7 @@
 import express from 'express';
-import departmentController from '../controllers/department';
 import { asyncHandler } from '../middlewares/errorHandler';
 import { adminMiddleware, teamLeaderMiddleware } from '../middlewares';
+import { departmentController } from '../controllers/department';
 
 const routerDepartment = express.Router();
 

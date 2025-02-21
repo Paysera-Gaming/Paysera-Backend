@@ -1,548 +1,271 @@
 import { Request, Response } from "express";
-import { prisma } from "../config/database";
-import { validateCreateDepartment, validateDepartmentAssignEmployee, validateDepartmentAssignLeader, validateDepartmentRemoveEmployee, validateUpdateDepartment } from "../validation/department.validation";
-import { customThrowError } from '../middlewares/errorHandler';
-import { initializeHourTimeZone } from "../utils/date";
+import DepartmentService from "../services/department.service";
 import { io } from "..";
+import { validateCreateDepartment, validateDepartmentAssignEmployee, validateDepartmentAssignLeader, validateDepartmentRemoveEmployee, validateUpdateDepartment } from "../validation/department.validation";
+import { raiseHttpError } from '../middlewares/errorHandler';
+import EmployeeService from "../services/employee.service";
+import { AccessLevel } from "@prisma/client";
 
-async function getAllDepartments(req: Request, res: Response) {
-    const allDepartments = await prisma.department.findMany({
-        orderBy: {
-            createdAt: 'asc'
-        },
-        include: {
-            Employees: {
-                select: {
-                    id: true,
-                    username: true,
-                    firstName: true,
-                    lastName: true,
-                    middleName: true,
-                    accessLevel: true,
-                    isActive: true,
-                    role: true,
-                }
-            },
-            Leader: {
-                select: {
-                    id: true,
-                    username: true,
-                    firstName: true,
-                    lastName: true,
-                    middleName: true,
-                    accessLevel: true,
-                    isActive: true,
-                    role: true,
-                }
-            }
+export const departmentController = {
+    getAllDepartments: async (req: Request, res: Response) => {
+        const allDepartments = await DepartmentService.getAllDepartments();
+        res.status(200).send(allDepartments);
+    },
+
+    getDepartmentEmployees: async (req: Request, res: Response) => {
+        const departmentId = Number(req.params.id);
+        if (!departmentId) {
+            return raiseHttpError(400, "Invalid department ID");
         }
-    });
 
-    res.status(200).send(allDepartments);
-}
+        const employees = await DepartmentService.getDepartmentEmployees(departmentId);
+        res.status(200).send(employees);
+    },
 
-async function getDepartmentEmployees(req: Request, res: Response) {
-    const departmentId = Number(req.params.id);
-    if (!departmentId) {
-        return customThrowError(400, "Invalid department ID");
-    }
-
-    const department = await prisma.department.findUnique({
-        where: { id: departmentId },
-        include: {
-            Employees: true
+    getDepartmentLeader: async (req: Request, res: Response) => {
+        const departmentId = Number(req.params.id);
+        if (!departmentId) {
+            return raiseHttpError(400, "Invalid department ID");
         }
-    });
 
-    if (!department) {
-        return customThrowError(404, "Department not found");
-    }
+        const department = await DepartmentService.getDepartmentById(departmentId);
 
-    res.status(200).send(department.Employees);
-}
-
-async function getDepartmentLeader(req: Request, res: Response) {
-    const departmentId = Number(req.params.id);
-    if (!departmentId) {
-        return customThrowError(400, "Invalid department ID");
-    }
-
-    const department = await prisma.department.findUnique({
-        where: { id: departmentId },
-        include: {
-            Leader: true
+        if (!department) {
+            throw raiseHttpError(404, "Department not found");
         }
-    });
 
-    if (!department) {
-        return customThrowError(404, "Department not found");
-    }
+        res.status(200).send(department.Leader || "No leader assigned");
+    },
 
-    if (!department.Leader) {
-        return customThrowError(404, "Department has no leader");
-    }
-
-    res.status(200).send(department.Leader);
-}
-
-async function getDepartmentById(req: Request, res: Response) {
-    const departmentId = Number(req.params.id);
-
-    if (!departmentId) {
-        return customThrowError(404, "Invalid department ID");
-    }
-
-    const department = await prisma.department.findUnique({
-        where: { id: departmentId },
-        include: {
-            DepartmentSchedule: true,
-            Employees: true,
-            Leader: true
-        },
-    });
-
-    if (!department) {
-        customThrowError(404, "Department not found");
-    }
-
-    res.status(200).send(department);
-}
-
-async function createDepartment(req: Request, res: Response) {
-    const body: any = {
-        name: String(req.body.name),
-        leaderId: Number(req.body.leaderId)
-    };
-
-    validateCreateDepartment({ ...req.body, ...body });
-    if (req.body.leaderId) {
-        const leaderExists = await prisma.employee.findUnique({
-            where: { id: body.leaderId },
-        });
-
-        if (!leaderExists) {
-            return customThrowError(404, "Leader not found");
+    getDepartmentById: async (req: Request, res: Response) => {
+        const departmentId = Number(req.params.id);
+        if (!departmentId) {
+            throw raiseHttpError(400, "Invalid department ID");
         }
-    }
 
-    const employee = await prisma.employee.findUnique({
-        where: { id: body.leaderId }
-    });
-
-    if (!employee) {
-        return customThrowError(404, "Leader not found");
-    } else if (employee.accessLevel === "EMPLOYEE") {
-        return customThrowError(400, "Employee is not an admin or team leader");
-    }
-
-    const existingDepartment = await prisma.department.findFirst({
-        where: { name: body.name },
-    });
-
-    if (existingDepartment) {
-        return customThrowError(400, "Department name already exists");
-    }
-
-    // Create department
-    await prisma.department.create({
-        data: {
-            name: body.name.trim() || "Department Name",
-            Leader: {
-                connect: {
-                    id: body.leaderId
-                }
-            },
-            Employees: {
-                connect: {
-                    id: body.leaderId
-                }
-            }
-        },
-    });
-
-    io.emit("department");
-    res.status(201).send("Department created successfully");
-}
-
-async function updateDepartmentById(req: Request, res: Response) {
-    const departmentId = Number(req.params.id);
-    if (!departmentId) {
-        return customThrowError(400, "Invalid department ID");
-    }
-
-    validateUpdateDepartment(req.body);
-
-    const existingDepartment = await prisma.department.findUnique({
-        where: { id: departmentId },
-    });
-
-    if (!existingDepartment) {
-        return customThrowError(404, "Department not found");
-    }
-
-    if (req.body.leaderId) {
-        const leaderExists = await prisma.employee.findUnique({
-            where: { id: req.body.leaderId },
-        });
-
-        if (!leaderExists) {
-            customThrowError(404, "Leader not found");
+        const department = await DepartmentService.getDepartmentById(departmentId);
+        if (!department) {
+            throw raiseHttpError(404, "Department not found");
         }
-    }
 
-    // Update department
-    await prisma.department.update({
-        where: { id: departmentId },
-        data: {
-            name: req.body.name.trim() || createDepartment.name,
-            leaderId: req.body.leaderId,
-        },
-    });
+        res.status(200).send(department);
+    },
 
-    io.emit("department");
-    res.status(200).send("Department updated successfully");
-}
+    createDepartment: async (req: Request, res: Response) => {
+        validateCreateDepartment(req.body);
 
-async function deleteDepartmentById(req: Request, res: Response) {
-    const departmentId = Number(req.params.id);
-    if (!departmentId) {
-        return customThrowError(404, "Invalid department ID");
-    }
-
-    const existingDepartment = await prisma.department.findFirst({
-        where: { id: departmentId },
-    });
-
-    if (!existingDepartment) {
-        return customThrowError(404, "Department not found");
-    }
-
-    const departmentSchedule = await prisma.departmentSchedule.findMany({
-        where: { departmentId: departmentId }
-    });
-
-    // Get all schedule IDs for the department schedules
-    // Cascade delete department schedules
-    // Delete the schedules 
-    const departmentsScheduleIds = departmentSchedule.map(schedule => schedule.scheduleId);
-    await prisma.$transaction([
-        prisma.schedule.deleteMany({
-            where: {
-                id: {
-                    in: departmentsScheduleIds
-                }
-            }
-        }),
-        prisma.department.delete({
-            where: { id: departmentId },
-        })
-    ]);
-
-    io.emit("department");
-    res.status(200).send("Department deleted successfully");
-}
-
-async function getDepartmentSchedules(req: Request, res: Response) {
-    const departmentId = Number(req.params.id);
-    if (!departmentId) {
-        return customThrowError(404, "Invalid department ID");
-    }
-
-    const schedules = await prisma.departmentSchedule.findMany({
-        where: { departmentId: departmentId },
-        include: {
-            Schedule: true
-        },
-        orderBy: {
-            Schedule: {
-                startTime: 'asc'
-            }
-        },
-    });
-
-    res.status(200).send(schedules);
-}
-
-async function getDepartmentSchedulesToday(req: Request, res: Response) {
-    const departmentId = Number(req.params.id);
-    if (!departmentId) {
-        return customThrowError(404, "Invalid department ID");
-    }
-
-    const timeZone = 'Asia/Manila';
-    const startOfDay = initializeHourTimeZone(new Date(new Date().setHours(0, 0, 0, 0)), timeZone);
-    const endOfDay = initializeHourTimeZone(new Date(new Date().setHours(23, 59, 59, 999)), timeZone);
-
-    const schedules = await prisma.departmentSchedule.findMany({
-        where: {
-            departmentId: departmentId,
-            Schedule: {
-                startTime: {
-                    gte: startOfDay,
-                    lt: endOfDay
-                }
-            }
-        },
-        include: {
-            Schedule: true
-        },
-        orderBy: {
-            Schedule: {
-                startTime: 'asc'
-            }
-        },
-    });
-
-    res.status(200).send(schedules);
-}
-
-async function getDepartmentAttendance(req: Request, res: Response) {
-    const departmentId = Number(req.params.id);
-    if (!departmentId) {
-        return customThrowError(400, "Invalid department ID");
-    }
-
-    const employee = await prisma.employee.findMany({
-        where: { Department: { id: Number(req.params.id) } }
-    });
-
-    // Get all employee IDs for the department attendance
-    const employeeIds = employee.map(emp => emp.id);
-
-    const attendance = await prisma.attendance.findMany({
-        where: {
-            employeeId: {
-                in: employeeIds
-            },
-        },
-        include: {
-            employee: true
-        },
-    });
-
-    res.status(200).send(attendance);
-}
-
-async function getDepartmentAttendanceToday(req: Request, res: Response) {
-    const departmentId = Number(req.params.id);
-    if (!departmentId) {
-        return customThrowError(400, "Invalid department ID");
-    }
-
-    const employee = await prisma.employee.findMany({
-        where: { Department: { id: Number(req.params.id) } }
-    });
-
-    // Get all employee IDs for the department attendance
-    const employeeIds = employee.map(emp => emp.id);
-
-    if (employeeIds.length === 0) {
-        return customThrowError(404, "No employees found in this department");
-    }
-
-    const timeZone = 'Asia/Manila';
-    const startOfDay = initializeHourTimeZone(new Date(new Date().setHours(0, 0, 0, 0)), timeZone);
-    const endOfDay = initializeHourTimeZone(new Date(new Date().setHours(23, 59, 59, 999)), timeZone);
-
-    const attendance = await prisma.attendance.findMany({
-        where: {
-            employeeId: {
-                in: employeeIds
-            },
-            createdAt: {
-                gte: startOfDay,
-                lt: endOfDay
-            },
-        },
-        orderBy: {
-            createdAt: 'desc'
-        },
-        include: {
-            employee: true
-        },
-    });
-
-    res.status(200).send(attendance);
-}
-
-async function updateDepartmentAssignEmployee(req: Request, res: Response) {
-    const departmentId = Number(req.params.id);
-    const role = String(req.body.role).toLocaleUpperCase().trim();
-    const username = req.body.username;
-    validateDepartmentAssignEmployee({ departmentId, role, username });
-
-    const department = await prisma.department.findUnique({
-        where: { id: departmentId }
-    });
-
-    if (!department) {
-        return customThrowError(404, "Department not found");
-    }
-
-    const employee = await prisma.employee.findUnique({
-        where: { username: username }
-    });
-
-    if (!employee) {
-        return customThrowError(404, "Employee not found");
-    }
-
-    await prisma.employee.update({
-        where: { id: employee.id },
-        data: {
-            role: String(req.body.role).toLocaleUpperCase().trim(),
-            Department: {
-                connect: {
-                    id: departmentId
-                }
-            }
+        const teamLead = await EmployeeService.getEmployeeById(req.body.leaderId);
+        if (!teamLead) {
+            throw raiseHttpError(404, "Leader not found");
+        } if (teamLead.accessLevel === "EMPLOYEE") {
+            throw raiseHttpError(400, "Employee is not an admin or team leader");
         }
-    });
 
-    io.emit('department');
-    res.status(200).send("Employee assigned to department successfully");
-}
+        const updatedData = { ...req.body, leaderId: req.body.leaderId };
+        const department = await DepartmentService.createDepartment(updatedData);
 
-async function updateDepartmentRemoveEmployee(req: Request, res: Response) {
-    const departmentId = Number(req.params.id);
-    const employeeId = Number(req.body.employeeId);
-    validateDepartmentRemoveEmployee({ departmentId, employeeId });
+        io.emit("department");
+        res.status(201).send(department);
 
-    if (req.body.info && req.body.info.id === employeeId) {
-        return customThrowError(400, "You can't remove yourself from department");
-    }
+    },
 
-    const [department, employee] = await Promise.all([
-        prisma.department.findUnique({
-            where: { id: departmentId }
-        }),
-        prisma.employee.findUnique({
-            where: { id: employeeId }
-        })
-    ]);
+    updateDepartmentById: async (req: Request, res: Response) => {
+        const departmentId = Number(req.params.id);
+        if (!departmentId) {
+            return raiseHttpError(400, "Invalid department ID");
+        }
 
-    if (!department) {
-        return customThrowError(404, "Department not found");
-    }
+        validateUpdateDepartment(req.body);
 
-    if (!employee) {
-        return customThrowError(404, "Employee not found");
-    }
 
-    await prisma.employee.update({
-        where: { id: employee.id },
-        data: {
-            role: null,
-            Department: {
-                disconnect: true
+        const existingDepartment = await DepartmentService.getDepartmentById(departmentId);
+        if (!existingDepartment) {
+            throw raiseHttpError(400, "Department already exists");
+        }
+
+
+        let teamLead;
+        if (req.body.leaderId) {
+            teamLead = await EmployeeService.getEmployeeById(req.body.leaderId);
+            if (!teamLead) {
+                throw raiseHttpError(404, "Leader not found");
+            } if (!teamLead) {
+                throw raiseHttpError(404, "Leader not found");
+            } else if (teamLead.accessLevel === "EMPLOYEE") {
+                throw raiseHttpError(400, "Employee is not an admin or team leader");
             }
+
         }
-    });
 
-    io.emit('department');
-    res.status(200).send("Employee removed from department successfully");
-}
+        const updatedData = { ...existingDepartment, ...req.body };
+        const message = await DepartmentService.updateDepartmentById(departmentId, updatedData);
 
-async function updateDepartmentAssignLeader(req: Request, res: Response) {
-    const departmentId = Number(req.params.id);
-    const leaderId = Number(req.body.leaderId);
-    validateDepartmentAssignLeader({ departmentId, leaderId });
+        io.emit("department");
+        res.status(200).send(message);
 
-    const [department, employee] = await Promise.all([
-        prisma.department.findUnique({
-            where: { id: departmentId }
-        }),
-        prisma.employee.findUnique({
-            where: { id: leaderId }
-        })
-    ]);
+    },
 
-    if (!department) {
-        return customThrowError(404, "Department not found");
-    }
-
-    if (!employee) {
-        return customThrowError(400, "Employee is not an admin or team leader");
-    } else if (employee.accessLevel === "EMPLOYEE") {
-        return customThrowError(400, "Employee is not an admin or team leader");
-    }
-
-    // update employee leads department
-    await prisma.employee.update({
-        where: { id: leaderId },
-        data: {
-            role: "TEAM LEADER",
-            LeadsDepartment: {
-                connect: {
-                    id: departmentId
-                }
-            },
-            Department: {
-                connect: {
-                    id: departmentId
-                }
-            },
+    deleteDepartmentById: async (req: Request, res: Response) => {
+        const departmentId = Number(req.params.id);
+        if (!departmentId) {
+            return raiseHttpError(404, "Invalid department ID");
         }
-    });
 
-    io.emit('department');
-    res.status(200).send("Leader assigned to department successfully");
-}
-
-async function updateDepartmentRemoveLeader(req: Request, res: Response) {
-    const departmentId = Number(req.params.id);
-    if (!departmentId) {
-        return customThrowError(400, "Invalid department ID");
-    }
-
-    const department = await prisma.department.findUnique({
-        where: { id: departmentId }
-    });
-
-    if (!department) {
-        return customThrowError(404, "Department not found");
-    }
-
-    // update employee leads department
-    const leader = await prisma.employee.findUnique({
-        where: { id: department.leaderId || undefined }
-    });
-
-    if (!leader) {
-        return customThrowError(404, "Leader not found");
-    }
-
-    await prisma.employee.update({
-        where: { id: leader.id },
-        data: {
-            role: null,
-            LeadsDepartment: {
-                disconnect: true
-            },
-            Department: {
-                disconnect: true
-            }
+        const existingDepartment = await DepartmentService.getDepartmentById(departmentId);
+        if (!existingDepartment) {
+            throw raiseHttpError(404, "Department not found");
         }
-    });
 
-    io.emit('department');
-    res.status(200).send("Leader removed from department successfully");
-}
+        await DepartmentService.deleteDepartmentById(departmentId);
 
-export default {
-    getAllDepartments,
-    getDepartmentById,
-    getDepartmentEmployees,
-    getDepartmentLeader,
-    createDepartment,
-    updateDepartmentById,
-    deleteDepartmentById,
-    getDepartmentSchedules,
-    getDepartmentAttendance,
-    getDepartmentAttendanceToday,
-    getDepartmentSchedulesToday,
-    updateDepartmentAssignEmployee,
-    updateDepartmentRemoveEmployee,
-    updateDepartmentAssignLeader,
-    updateDepartmentRemoveLeader
+        io.emit("department");
+        res.status(200).send(`The department of ${existingDepartment.name} is deleted successfully`);
+    },
+
+    getDepartmentSchedules: async (req: Request, res: Response) => {
+        const departmentId = Number(req.params.id);
+        if (!departmentId) {
+            return raiseHttpError(404, "Invalid department ID");
+        }
+
+        const schedules = await DepartmentService.getDepartmentSchedules(departmentId);
+        res.status(200).send(schedules);
+    },
+
+    getDepartmentSchedulesToday: async (req: Request, res: Response) => {
+        const departmentId = Number(req.params.id);
+        if (!departmentId) {
+            return raiseHttpError(404, "Invalid department ID");
+        }
+
+        const schedules = await DepartmentService.getDepartmentSchedulesToday(departmentId);
+        res.status(200).send(schedules);
+    },
+
+    getDepartmentAttendance: async (req: Request, res: Response) => {
+        const departmentId = Number(req.params.id);
+        if (!departmentId) {
+            return raiseHttpError(400, "Invalid department ID");
+        }
+
+        const existingDepartment = await DepartmentService.getDepartmentById(departmentId);
+        if (!existingDepartment) {
+            throw raiseHttpError(404, "Department not found");
+        }
+
+        const attendance = await DepartmentService.getDepartmentAttendance(departmentId);
+        res.status(200).send(attendance);
+    },
+
+    getDepartmentAttendanceToday: async (req: Request, res: Response) => {
+        const departmentId = Number(req.params.id);
+        if (!departmentId) {
+            return raiseHttpError(400, "Invalid department ID");
+        }
+
+        const existingDepartment = await DepartmentService.getDepartmentById(departmentId);
+        if (!existingDepartment) {
+            throw raiseHttpError(404, "Department not found");
+        }
+
+        const attendance = await DepartmentService.getDepartmentAttendanceToday(departmentId);
+        res.status(200).send(attendance);
+    },
+
+    updateDepartmentAssignEmployee: async (req: Request, res: Response) => {
+        const { departmentId, role, username } = {
+            departmentId: Number(req.params.id),
+            role: req.body.role,
+            username: req.body.username
+        };
+
+        validateDepartmentAssignEmployee({ departmentId, role, username });
+        const existingDepartment = await DepartmentService.getDepartmentById(departmentId);
+        if (!existingDepartment) {
+            throw raiseHttpError(404, "Department not found");
+        }
+
+        const employee = await EmployeeService.getEmployeeByUsername(username);
+        if (!employee) {
+            throw raiseHttpError(404, "Employee not found");
+        }
+
+        await DepartmentService.updateDepartmentAssignEmployee(departmentId, role, employee.id);
+
+
+        io.emit('department');
+        res.status(200).send(`Employee ${username} assigned to department ${existingDepartment.name} as ${role}`);
+
+    },
+
+    updateDepartmentRemoveEmployee: async (req: Request, res: Response) => {
+        const departmentId = Number(req.params.id);
+        const { employeeId } = req.body;
+
+        validateDepartmentRemoveEmployee({ departmentId, employeeId });
+        const [department, employee] = await Promise.all([
+            DepartmentService.getDepartmentById(departmentId),
+            EmployeeService.getEmployeeById(employeeId)
+        ]);
+
+        if (!department) {
+            throw raiseHttpError(404, "Department not found");
+        } if (!employee) {
+            throw raiseHttpError(404, "Employee not found");
+        }
+
+        await DepartmentService.updateDepartmentRemoveEmployee(employeeId);
+
+        io.emit('department');
+        res.status(200).send(`Employee ${employee.lastName} removed from department ${department.name} successfully`);
+
+    },
+
+    updateDepartmentAssignLeader: async (req: Request, res: Response) => {
+        const departmentId = Number(req.params.id);
+        const { leaderId } = {
+            leaderId: Number(req.body.leaderId)
+        };
+
+        validateDepartmentAssignLeader({ departmentId, leaderId });
+        const [department, employee] = await Promise.all([
+            DepartmentService.getDepartmentById(departmentId),
+            EmployeeService.getEmployeeById(leaderId)
+        ]);
+
+        if (!department) {
+            throw raiseHttpError(404, "Department not found");
+        } if (!employee) {
+            throw raiseHttpError(404, "Employee not found");
+        } if (employee.accessLevel !== AccessLevel.TEAM_LEADER) {
+            throw raiseHttpError(400, "Employee is not a team leader");
+        }
+
+        await DepartmentService.updateDepartmentAssignLeader(departmentId, leaderId);
+
+        io.emit('department');
+        res.status(200).send(`Employee ${employee.lastName} assigned as leader of department ${department.name} successfully`);
+    },
+
+    updateDepartmentRemoveLeader: async (req: Request, res: Response) => {
+        const departmentId = Number(req.params.id);
+        if (!departmentId) {
+            return raiseHttpError(400, "Invalid department ID");
+        }
+
+        const existingDepartment = await DepartmentService.getDepartmentById(departmentId);
+        if (!existingDepartment) {
+            throw raiseHttpError(404, "Department not found");
+        }
+
+        const leader = existingDepartment.Leader;
+        if (!leader) {
+            throw raiseHttpError(404, "Department has no leader");
+        }
+
+        await DepartmentService.updateDepartmentRemoveLeader(leader.id);
+
+        io.emit('department');
+        res.status(200).send(`Leader removed from department ${existingDepartment.name} successfully`);
+    }
 };
