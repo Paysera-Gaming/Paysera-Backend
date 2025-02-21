@@ -29,10 +29,7 @@ const globalErrorHandler = (
     });
 
     if (error instanceof ZodError) {
-        res.status(400).send({
-            statusCode: 400,
-            message: error.errors,
-        });
+        res.status(400).send(error.errors[0]?.message + " in path " + error.errors[0]?.path || 'Bad Request');
 
         return;
     }
