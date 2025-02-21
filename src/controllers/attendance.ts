@@ -20,8 +20,12 @@ export const AttendanceController = {
             throw raiseHttpError(400, "Invalid employee ID");
         }
 
-        const attendance = await AttendanceService.getAttendanceById(attendanceId);
-        res.status(200).send(attendance);
+        const existingAttendance = await AttendanceService.getAttendanceById(attendanceId);
+        if (!existingAttendance) {
+            throw raiseHttpError(404, "Attendance record not found");
+        }
+
+        res.status(200).send(existingAttendance);
     },
 
     async getAttendanceByEmployeeId(req: Request, res: Response) {
@@ -164,6 +168,11 @@ export const AttendanceController = {
 
         if (isNaN(attendanceId)) {
             throw raiseHttpError(400, "Invalid attendance ID");
+        }
+
+        const existingAttendance = await AttendanceService.getAttendanceById(attendanceId);
+        if (!existingAttendance) {
+            throw raiseHttpError(404, "Attendance record not found");
         }
 
         await AttendanceService.deleteAttendance(attendanceId);
