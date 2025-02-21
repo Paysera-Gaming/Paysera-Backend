@@ -1,23 +1,23 @@
 import { Router } from "express";
-import announcement from '../controllers/announcement';
+import { AnnouncementController } from '../controllers/announcement';
 
 const routerAnnouncement = Router();
 routerAnnouncement.route('/')
-    .get(announcement.getAnnouncements)
-    .post(announcement.createAnnouncement);
+    .get(AnnouncementController.getAnnouncements)
+    .post(AnnouncementController.createAnnouncement);
 
 routerAnnouncement.route('/:id')
-    .get(announcement.getAnnouncementById)
-    .put(announcement.updateAnnouncement)
-    .delete(announcement.deleteAnnouncement);
+    .get(AnnouncementController.getAnnouncementById)
+    .put(AnnouncementController.updateAnnouncement)
+    .delete(AnnouncementController.deleteAnnouncement);
 
 // routerAnnouncement.route('/department-announcements')
-//     .get(announcement.getDepartmentAnnouncements)
-//     .post(announcement.createDepartmentAnnouncement);
+//     .get(AnnouncementController.getDepartmentAnnouncements)
+//     .post(AnnouncementController.createDepartmentAnnouncement);
 
 // routerAnnouncement.route('/department-announcements/:id')
-//     .get(announcement.getDepartmentAnnouncementById)
-//     .put(announcement.updateDepartmentAnnouncement)
-//     .delete(announcement.deleteDepartmentAnnouncement);
+//     .get(AnnouncementController.getDepartmentAnnouncementById)
+//     .put(AnnouncementController.updateDepartmentAnnouncement)
+//     .delete(AnnouncementController.deleteDepartmentAnnouncement);
 
 export default routerAnnouncement;
