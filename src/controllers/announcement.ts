@@ -2,7 +2,7 @@ import { Request, Response } from 'express';
 import { io } from '../index';
 import { AnnouncementService } from '../services/announcement.service';
 
-const announcementController = {
+export const AnnouncementController = {
     getAnnouncements: async (req: Request, res: Response) => {
         const announcements = await AnnouncementService.getAnnouncements();
         return res.status(200).send(announcements);
@@ -66,5 +66,3 @@ const announcementController = {
         return res.status(204).send(`Announcement ${announcement.id} deleted successfully`);
     }
 };
-
-export default announcementController;
