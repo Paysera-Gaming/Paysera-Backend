@@ -38,6 +38,7 @@ const customHttpLoggerMiddleware = () => {
                 url: req.originalUrl,
                 origin: req.headers.origin,
                 body: req.body,
+                response: res.json,
             });
         });
 
@@ -46,6 +47,6 @@ const customHttpLoggerMiddleware = () => {
 };
 
 
-const httpLoggerMiddleware = configEnv.NODE_ENV === 'development' ? customHttpLoggerMiddleware() : pinoHttp({ logger });
+const httpLoggerMiddleware = isDevelopment ? customHttpLoggerMiddleware() : pinoHttp({ logger });
 
 export { logger, httpLoggerMiddleware };
