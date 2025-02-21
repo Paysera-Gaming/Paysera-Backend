@@ -6,6 +6,7 @@ import { isAfter } from 'date-fns';
 import { validateUpdatePersonalSchedule } from '../validation/scheduleUpdate.validation';
 import PersonalScheduleService from '../services/personalSchedule.service';
 import EmployeeService from '../services/employee.service';
+import { io } from '..';
 
 export const PersonalScheduleController = {
     // GET /personal-schedule
@@ -90,6 +91,7 @@ export const PersonalScheduleController = {
         }
 
         const personalSchedule = await PersonalScheduleService.createPersonalSchedule({ ...body });
+        io.emit('personal-schedule');
         res.status(201).send(personalSchedule);
     },
 
@@ -146,7 +148,7 @@ export const PersonalScheduleController = {
 
         const updatedData = { ...existingPersonalSchedule, ...body };
         await PersonalScheduleService.updatePersonalSchedule(personalScheduleId, updatedData);
-        return res.status(201).send("Schedule updated successfully");
+        return res.status(201).send(`Personal schedule of ${updatedData.name} has been updated`);
     },
 
     // DELETE /personal-schedule/:id
@@ -168,7 +170,8 @@ export const PersonalScheduleController = {
         }
 
         await PersonalScheduleService.deleteSchedule(personalScheduleId);
-        return res.status(200).send(`Personal schedule of ${schedule.Employee.lastName} has been deleted`);
+        io.emit('personal-schedule');
+        return res.status(200).send(`Personal schedule of ${schedule.name} has been deleted`);
     }
 };
 
