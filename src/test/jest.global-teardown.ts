@@ -11,9 +11,13 @@ export default async () => {
     await prisma.announcement.deleteMany();
     await prisma.holiday.deleteMany();
     await prisma.personalSchedule.deleteMany();
+    await prisma.schedule.deleteMany();
+    await prisma.holiday.deleteMany();
 
     // Disconnect the Prisma client
     await prisma.$disconnect();
     server.close();
+    console.log('Test Done');
     console.log('Server closed');
+
 };
