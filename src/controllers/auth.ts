@@ -2,10 +2,12 @@ import { Request, Response } from 'express';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { prisma } from '../config/database';
-import { validateLogin } from '../validate/auth.validation';
-import { customThrowError } from '../middlewares/errorHandler';
+import { validateLogin } from '../validation/auth.validation';
+import { raiseHttpError } from '../middlewares/errorHandler';
 import { configEnv } from '../config/dotenv';
 import nodemailer from 'nodemailer';
+import EmployeeService from 'src/services/employee.service';
+import DepartmentService from 'src/services/department.service';
 
 const JWT_SECRET = configEnv.JWT_SECRET;
 const JWT_EXPIRATION = '12h';
@@ -42,12 +44,10 @@ const login = async (req: Request, res: Response) => {
     };
 
     const { username, password } = validateLogin(body);
-    const user = await prisma.employee.findUnique({
-        where: { username },
-    });
+    const user = await EmployeeService.getEmployeeByUserNameAuth(username);
 
     if (!user || !(await bcrypt.compare(password, user.passwordCredentials))) {
-        return customThrowError(404, "Invalid username or password");
+        return raiseHttpError(404, "Invalid username or password");
     }
 
     // Generate both access and refresh tokens
@@ -77,7 +77,7 @@ const refreshToken = async (req: Request, res: Response) => {
     const refreshToken = req.cookies.refreshToken;
 
     if (!refreshToken) {
-        return customThrowError(401, "Unauthorized");
+        return raiseHttpError(401, "Unauthorized");
     }
 
     try {
@@ -85,12 +85,10 @@ const refreshToken = async (req: Request, res: Response) => {
         const decoded = jwt.verify(refreshToken, JWT_SECRET) as { id: number };
 
         // Find the user
-        const user = await prisma.employee.findFirst({
-            where: { id: decoded.id },
-        });
+        const user = await EmployeeService.getEmployeeById(decoded.id);
 
         if (!user) {
-            return customThrowError(404, "User not found");
+            return raiseHttpError(404, "User not found");
         }
 
         // Generate a new access token
@@ -105,7 +103,7 @@ const refreshToken = async (req: Request, res: Response) => {
 
         res.status(200).send("Access token refreshed");
     } catch (error) {
-        return customThrowError(401, "Invalid refresh token");
+        return raiseHttpError(401, "Invalid refresh token");
     }
 };
 
@@ -129,39 +127,19 @@ const getUserInfo = async (req: Request, res: Response) => {
     const token = req.cookies.token;
 
     if (!token) {
-        return customThrowError(401, "Unauthorized cookie not found");
+        return raiseHttpError(401, "Unauthorized cookie not found");
     }
 
     try {
         const decodedToken = jwt.verify(token, JWT_SECRET) as { id: number, accessLevel: string, departmentId: number };
-        const employee = await prisma.employee.findFirst({
-            where: { id: decodedToken.id },
-            select: {
-                id: true,
-                departmentId: true,
-                accessLevel: true,
-                username: true,
-                firstName: true,
-                lastName: true,
-                middleName: true,
-                role: true,
-                isActive: true,
-            },
-        });
+        const employee = await EmployeeService.getEmployeeById(decodedToken.id);
 
 
         if (!employee) {
-            return customThrowError(404, "Account not found");
+            return raiseHttpError(404, "Account not found");
         }
 
-        const department = await prisma.department.findFirst({
-            where: { id: employee?.departmentId || -1 },
-            select: {
-                name: true
-            }
-        });
-
-
+        const department = await DepartmentService.getDepartmentById(employee.departmentId || -1);
         // this can be extend if we going to add another schedule type
         let departmentSchedule;
         if (department && employee.role && employee.departmentId) {
@@ -191,12 +169,9 @@ const getUserInfo = async (req: Request, res: Response) => {
             },
         });
 
-        console.log({ ...employee, departmentName: department?.name || 'N/A', departmentSchedule, personalSchedule });
-
-
         res.status(200).send({ ...employee, departmentName: department?.name || 'N/A', departmentSchedule, personalSchedule });
     } catch (error) {
-        return customThrowError(401, "Invalid token");
+        return raiseHttpError(401, "Invalid token");
     }
 };
 
@@ -209,7 +184,7 @@ async function sendForgetPasswordEmail(req: Request, res: Response) {
     });
 
     if (!user) {
-        return customThrowError(404, "Email not exists");
+        return raiseHttpError(404, "Email not exists");
     }
 
     const forgetPasswordToken = jwt.sign(
@@ -220,7 +195,7 @@ async function sendForgetPasswordEmail(req: Request, res: Response) {
         { expiresIn: '1h' }
     );
 
-    const resetPasswordUrl = `${configEnv.ORIGIN}/reset-password?token=${forgetPasswordToken}`;
+    const resetPasswordUrl = `${'https://x3lkcvjr-5173.asse.devtunnels.ms'}/reset-password?token=${forgetPasswordToken}`;
 
     console.log({
         user: configEnv.EMAIL_USERNAME,
@@ -246,7 +221,7 @@ async function sendForgetPasswordEmail(req: Request, res: Response) {
         if (error) {
             console.log(error, info, "error sending email");
 
-            return customThrowError(500, "Error sending email");
+            return raiseHttpError(500, "Error sending email");
         } else {
             res.status(200).send("Password reset email sent");
         }
@@ -261,23 +236,24 @@ async function resetPassword(req: Request, res: Response) {
 
 
     if (!id || !password) {
-        return customThrowError(400, "Token and password are required");
+        return raiseHttpError(400, "Token and password are required");
     }
 
     try {
         const decoded = jwt.verify(id, JWT_SECRET) as { id: number };
         const hashedPassword = await bcrypt.hash(password.trim(), 10);
 
-        await prisma.employee.update({
-            where: { id: decoded.id },
-            data: {
-                passwordCredentials: hashedPassword,
-            },
-        });
+        const existingEmployee = await EmployeeService.getEmployeeById(decoded.id);
+
+        if (!existingEmployee) {
+            return raiseHttpError(404, "Employee not found");
+        }
+
+        await EmployeeService.updateEmployee(decoded.id, { password: hashedPassword });
 
         res.status(200).send("Password reset successful");
     } catch (error) {
-        return customThrowError(401, "Invalid token");
+        return raiseHttpError(401, "Invalid token");
     }
 }
 
