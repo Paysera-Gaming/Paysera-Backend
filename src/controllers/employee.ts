@@ -1,10 +1,9 @@
 import { Request, Response } from "express";
 import bcrypt from 'bcryptjs';
 import EmployeeService from "../services/employee.service";
-import { io } from "..";
 import { validateCreateOneEmployee, validateUpdateEmployee } from "../validation/employee.validation";
-import { prisma } from "../config/database";
 import { raiseHttpError } from "../middlewares/errorHandler";
+import { io } from "..";
 
 export const EmployeeController = {
     async getAllEmployees(req: Request, res: Response) {
@@ -43,21 +42,13 @@ export const EmployeeController = {
         const data = req.body;
         validateCreateOneEmployee(data);
 
-        const existingEmployeeUsername = await prisma.employee.findFirst({
-            where: {
-                username: data.username,
-            },
-        });
+        const existingEmployeeUsername = await EmployeeService.getEmployeeByUsername(data.username);
 
         if (existingEmployeeUsername) {
             throw raiseHttpError(400, "Username already used");
         }
 
-        const existingEmployeeEmail = await prisma.employee.findFirst({
-            where: {
-                email: data.email,
-            },
-        });
+        const existingEmployeeEmail = await EmployeeService.getEmployeeByEmail(data.email);
 
         if (existingEmployeeEmail) {
             throw raiseHttpError(400, "Email already used");
@@ -75,10 +66,7 @@ export const EmployeeController = {
         const data = req.body;
         validateUpdateEmployee(data);
 
-        const existingEmployee = await prisma.employee.findUnique({
-            where: { id: employeeId },
-        });
-
+        const existingEmployee = await EmployeeService.getEmployeeById(employeeId);
         if (!existingEmployee) {
             throw raiseHttpError(404, "Employee not found");
         }
@@ -102,10 +90,7 @@ export const EmployeeController = {
             throw raiseHttpError(400, "You can't delete yourself");
         }
 
-        const existingEmployee = await prisma.employee.findUnique({
-            where: { id: employeeId },
-        });
-
+        const existingEmployee = await EmployeeService.getEmployeeById(employeeId);
         if (!existingEmployee) {
             throw raiseHttpError(404, "Employee not found");
         }
@@ -113,7 +98,7 @@ export const EmployeeController = {
         await EmployeeService.deleteEmployeeById(employeeId);
 
         io.emit("employee");
-        res.status(200).send("Employee deleted successfully");
+        res.status(200).send(`Employee with id ${employeeId} deleted successfully`);
     }
 };
 
