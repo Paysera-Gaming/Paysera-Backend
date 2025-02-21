@@ -17,8 +17,8 @@ function validateDepartment(department: Department) {
 
 function validateCreateDepartment(department: Department) {
     const departmentSchema = z.object({
-        name: z.string().max(50).optional(),
-        leaderId: z.number().optional(),
+        name: z.string().max(50),
+        leaderId: z.number(),
         Leader: z.unknown().optional(),
         DepartmentSchedule: z.unknown().array().optional(),
         Employees: z.unknown().array().optional(),
