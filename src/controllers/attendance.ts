@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import { prisma } from '../config/database';
-import { validateCreateAttendance, validateUpdateAttendance } from '../validate/attendance.validation';
+import { validateCreateAttendance, validateUpdateAttendance } from '../validation/attendance.validation';
 import { customThrowError } from '../middlewares/errorHandler';
 import { parseISO, format, differenceInMinutes, isAfter, set, getHours, getMinutes, getSeconds } from 'date-fns';
 import { initializeDateTimeZone } from '../utils/date';
