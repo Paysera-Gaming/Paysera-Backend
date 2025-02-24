@@ -171,7 +171,7 @@ model Announcement {
 // TODO IMPLEMENT REQUEST
 model OneTimeSchedule {
   id         Int      @id @default(autoincrement())
-  employeeId Int
+  employeeId Int      @unique
   employee   Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   date       String
 
@@ -186,7 +186,7 @@ model OneTimeSchedule {
 
 model RequestOneTimeSchedule {
   id                Int           @id @default(autoincrement())
-  employeeId        Int
+  employeeId        Int           @unique
   employee          Employee      @relation(fields: [employeeId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   scheduleType      ScheduleType
   timeIn            DateTime      @default(now()) @Db.Timestamptz()
