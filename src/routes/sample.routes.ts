@@ -2,12 +2,22 @@ import { asyncHandler } from '../middlewares/errorHandler';
 import express, { Request, Response } from 'express';
 import os from 'os';
 import { configEnv } from '../config/dotenv';
-import { toZonedTime } from 'date-fns-tz';
-import { parseISO } from 'date-fns';
 
 const sampleRouter = express.Router();
 
+import { differenceInMinutes, format, getHours, getMinutes, isAfter, isBefore, parseISO, set } from 'date-fns';
+import { UAParser } from 'ua-parser-js';
+import { TZDate } from '@date-fns/tz';
 
+
+sampleRouter.get('/sample', (req: Request, res: Response) => {
+    // if weekend don't allow time in in depth schedule
+    const currentDay = format(new Date('2024-12-1'), 'EEEE');
+    if (currentDay === 'Saturday' || currentDay === 'Sunday') {
+        res.send('Weekend not allowed to time in');
+    }
+    res.send("Weekdays allowed to time in");
+});
 
 sampleRouter.get('/server', (req: Request, res: Response) => {
     const networkInterfaces = os.networkInterfaces();
@@ -29,18 +39,27 @@ sampleRouter.get('/server', (req: Request, res: Response) => {
     res.send(`Server's IP address is: ${serverIp}`);
 });
 
-
-
 sampleRouter.get('/', (req: Request, res: Response) => {
     const timeZone = "Asia/Manila";
-    const currentTime = toZonedTime(new Date(), timeZone)
+    const currentTime = new TZDate(new Date(), timeZone)
+    const device = req.headers['user-agent'];
+    const parse = new UAParser(device);
+
+    const ua = req.headers["sec-ch-ua"];
+    const mobile = req.headers["sec-ch-ua-mobile"];
+    const platform = req.headers["sec-ch-ua-platform"];
+
 
     res.send({
         message: "Hello World",
         env: configEnv.NODE_ENV,
         currentTime: currentTime.getHours() + ':' + currentTime.getMinutes() + ':' + currentTime.getSeconds(),
         date: new Date(),
-        isoDate: parseISO(new Date().toISOString())
+        isoDate: parseISO(new Date().toISOString()),
+        uaClient: parse.getResult(),
+        ua,
+        mobile,
+        platform
     });
 });
 
