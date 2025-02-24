@@ -155,10 +155,10 @@ export class EmployeeService {
         return employee;
     }
 
-    static async getEmployeeByUserNameAuth(email: string) {
+    static async getEmployeeByUserNameAuth(username: string) {
         const employee = await prisma.employee.findFirst({
             where: {
-                email,
+                username,
             },
 
         });
