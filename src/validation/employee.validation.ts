@@ -16,6 +16,7 @@ function validateCreateOneEmployee(employee: any) {
         departmentId: z.number().optional(),
         createdAt: z.date().optional(),
         updatedAt: z.date().optional(),
+        isAllowedRequestOvertime: z.boolean().optional(),
     });
 
     employeeSchema.parse(employee);
@@ -34,6 +35,7 @@ function validateUpdateEmployee(employee: any) {
         passwordCredentials: z.string().min(8).max(30).optional(),
         departmentId: z.number().optional(),
         updatedAt: z.date().optional(),
+        isAllowedRequestOvertime: z.boolean().optional(),
     });
 
     updateEmployeeSchema.parse(employee);
@@ -52,6 +54,7 @@ function validateEmployee(employee: any) {
         departmentId: z.number().optional(),
         createdAt: z.date().optional(),
         updatedAt: z.date().optional(),
+        isAllowedRequestOvertime: z.boolean().optional()
     });
 
     employeeSchema.parse(employee);
