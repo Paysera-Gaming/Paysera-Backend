@@ -6,8 +6,8 @@ import { validateLogin } from '../validation/auth.validation';
 import { raiseHttpError } from '../middlewares/errorHandler';
 import { configEnv } from '../config/dotenv';
 import nodemailer from 'nodemailer';
-import EmployeeService from 'src/services/employee.service';
-import DepartmentService from 'src/services/department.service';
+import { EmployeeService } from '../services/employee.service';
+import { DepartmentService } from '../services/department.service';
 
 const JWT_SECRET = configEnv.JWT_SECRET;
 const JWT_EXPIRATION = '12h';
