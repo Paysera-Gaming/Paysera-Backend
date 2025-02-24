@@ -8,7 +8,6 @@ export const seedDatabase = async () => {
     // Clean up the database first
     await cleanUpDatabase();
 
-    // Seed the database
     try {
         // Create Departments
         const department1 = await prisma.department.create({
@@ -26,6 +25,7 @@ export const seedDatabase = async () => {
         const hashPasswordA = await bcrypt.hash('ADMIN12345', configEnv.SALT_ROUNDS);
         const admin1 = await prisma.employee.create({
             data: {
+                email: "sample22@gmail.com",
                 username: 'ADMIN12345',
                 accessLevel: 'ADMIN',
                 passwordCredentials: hashPasswordA,
@@ -40,6 +40,7 @@ export const seedDatabase = async () => {
 
         const leader1 = await prisma.employee.create({
             data: {
+                email: "sample12@gmail.com",
                 username: 'TEAM_LEADER12345',
                 accessLevel: 'TEAM_LEADER',
                 passwordCredentials: hashPasswordL,
@@ -58,6 +59,7 @@ export const seedDatabase = async () => {
 
         const leader2 = await prisma.employee.create({
             data: {
+                email: "sample123@gmail.com",
                 username: 'leader2',
                 accessLevel: 'TEAM_LEADER',
                 passwordCredentials: 'hashed_password',
@@ -82,6 +84,7 @@ export const seedDatabase = async () => {
         // Create Employees
         const employee1 = await prisma.employee.create({
             data: {
+                email: "sample1234@gmail.com",
                 username: 'EMPLOYEE12345',
                 accessLevel: 'EMPLOYEE',
                 passwordCredentials: hashPasswordE,
@@ -95,8 +98,8 @@ export const seedDatabase = async () => {
                         date: formatDate(new Date()),
                         status: 'DONE',
                         scheduleType: 'FIXED',
-                        timeIn: new Date(2025, 0, 27, 8, 0, 0),
-                        timeOut: new Date(2025, 0, 27, 17, 0, 0),
+                        timeIn: new Date(new Date().setHours(8, 0, 0, 0)),
+                        timeOut: new Date(new Date().setHours(17, 0, 0, 0)),
                         timeTotal: 9,
                         timeHoursWorked: 8,
                     },
@@ -107,8 +110,8 @@ export const seedDatabase = async () => {
                         Schedule: {
                             create: {
                                 scheduleType: 'FIXED',
-                                startTime: new Date(2025, 0, 27, 8, 0, 0),
-                                endTime: new Date(2025, 0, 27, 17, 0, 0),
+                                startTime: new Date(new Date().setHours(8, 0, 0, 0)),
+                                endTime: new Date(new Date().setHours(17, 0, 0, 0)),
                             },
                         }
                     },
@@ -118,6 +121,7 @@ export const seedDatabase = async () => {
 
         const employee2 = await prisma.employee.create({
             data: {
+                email: "sample12345@gmail.com",
                 username: 'employee2',
                 accessLevel: 'EMPLOYEE',
                 passwordCredentials: 'hashed_password',
@@ -130,8 +134,8 @@ export const seedDatabase = async () => {
                         date: formatDate(new Date()),
                         status: 'DONE',
                         scheduleType: 'FIXED',
-                        timeIn: new Date(2025, 0, 27, 8, 0, 0),
-                        timeOut: new Date(2025, 0, 27, 17, 0, 0),
+                        timeIn: new Date(new Date().setHours(8, 0, 0, 0)),
+                        timeOut: new Date(new Date().setHours(17, 0, 0, 0)),
                         timeTotal: 9,
                         timeHoursWorked: 8,
                     },
@@ -146,6 +150,7 @@ export const seedDatabase = async () => {
 
         const employee3 = await prisma.employee.create({
             data: {
+                email: "sample12456@gmail.com",
                 username: 'employee3',
                 accessLevel: 'EMPLOYEE',
                 passwordCredentials: 'hashed_password',
@@ -158,8 +163,8 @@ export const seedDatabase = async () => {
                         date: formatDate(new Date()),
                         status: 'DONE',
                         scheduleType: 'FIXED',
-                        timeIn: new Date(2025, 0, 27, 8, 0, 0),
-                        timeOut: new Date(2025, 0, 27, 17, 0, 0),
+                        timeIn: new Date(new Date().setHours(8, 0, 0, 0)),
+                        timeOut: new Date(new Date().setHours(17, 0, 0, 0)),
                         timeTotal: 9,
                         timeHoursWorked: 8,
                     },
@@ -176,6 +181,7 @@ export const seedDatabase = async () => {
 
         const employee4 = await prisma.employee.create({
             data: {
+                email: "sample4@gmail.com",
                 username: 'employee4',
                 accessLevel: 'EMPLOYEE',
                 passwordCredentials: 'hashed_password',
@@ -188,8 +194,8 @@ export const seedDatabase = async () => {
                         date: formatDate(new Date()),
                         status: 'DONE',
                         scheduleType: 'FIXED',
-                        timeIn: new Date(2025, 0, 27, 8, 0, 0),
-                        timeOut: new Date(2025, 0, 27, 17, 0, 0),
+                        timeIn: new Date(new Date().setHours(8, 0, 0, 0)),
+                        timeOut: new Date(new Date().setHours(17, 0, 0, 0)),
                         timeTotal: 9,
                         timeHoursWorked: 8,
                     },
@@ -204,6 +210,7 @@ export const seedDatabase = async () => {
 
         const employee5 = await prisma.employee.create({
             data: {
+                email: "sample5@gmail.com",
                 username: 'employee5',
                 accessLevel: 'EMPLOYEE',
                 passwordCredentials: 'hashed_password',
@@ -217,8 +224,8 @@ export const seedDatabase = async () => {
                         date: formatDate(new Date()),
                         status: 'DONE',
                         scheduleType: 'FIXED',
-                        timeIn: new Date(2025, 0, 27, 8, 0, 0),
-                        timeOut: new Date(2025, 0, 27, 17, 0, 0),
+                        timeIn: new Date(new Date().setHours(8, 0, 0, 0)),
+                        timeOut: new Date(new Date().setHours(17, 0, 0, 0)),
                         timeTotal: 9,
                         timeHoursWorked: 8,
                     },
@@ -228,6 +235,7 @@ export const seedDatabase = async () => {
 
         const employee6 = await prisma.employee.create({
             data: {
+                email: "sample6@gmail.com",
                 username: 'employee6',
                 accessLevel: 'EMPLOYEE',
                 passwordCredentials: 'hashed_password',
@@ -245,8 +253,8 @@ export const seedDatabase = async () => {
                         date: formatDate(new Date()),
                         status: 'DONE',
                         scheduleType: 'FIXED',
-                        timeIn: new Date(2025, 0, 27, 8, 0, 0),
-                        timeOut: new Date(2025, 0, 27, 17, 0, 0),
+                        timeIn: new Date(new Date().setHours(8, 0, 0, 0)),
+                        timeOut: new Date(new Date().setHours(17, 0, 0, 0)),
                         timeTotal: 9,
                         timeHoursWorked: 8,
                     },
@@ -256,6 +264,7 @@ export const seedDatabase = async () => {
 
         const employee7 = await prisma.employee.create({
             data: {
+                email: "sample7@gmail.com",
                 username: 'employee7',
                 accessLevel: 'EMPLOYEE',
                 passwordCredentials: 'hashed_password',
@@ -269,8 +278,8 @@ export const seedDatabase = async () => {
                         date: formatDate(new Date()),
                         status: 'DONE',
                         scheduleType: 'FIXED',
-                        timeIn: new Date(2025, 0, 27, 8, 0, 0),
-                        timeOut: new Date(2025, 0, 27, 17, 0, 0),
+                        timeIn: new Date(new Date().setHours(8, 0, 0, 0)),
+                        timeOut: new Date(new Date().setHours(17, 0, 0, 0)),
                         timeTotal: 9,
                         timeHoursWorked: 8,
                     },
@@ -280,6 +289,7 @@ export const seedDatabase = async () => {
 
         const employee8 = await prisma.employee.create({
             data: {
+                email: "sample8@gmail.com",
                 username: 'employee8',
                 accessLevel: 'EMPLOYEE',
                 passwordCredentials: 'hashed_password',
@@ -301,7 +311,6 @@ export const seedDatabase = async () => {
                 scheduleType: 'FIXED',
                 startTime: (new Date('2024-08-01T08:00:00Z')),
                 endTime: (new Date('2024-08-01T17:00:00Z')),
-                limitWorkHoursDay: 8,
             },
         });
 
@@ -311,7 +320,6 @@ export const seedDatabase = async () => {
                 startTime: (new Date('2024-08-01T08:00:00Z')),
                 startTimeLimit: (new Date('2024-08-01T10:00:00Z')),
                 endTime: (new Date('2024-08-01T16:00:00Z')),
-                limitWorkHoursDay: 8,
             },
         });
 
@@ -342,8 +350,8 @@ export const seedDatabase = async () => {
                 date: formatDate(new Date()),
                 status: 'DONE',
                 scheduleType: 'FLEXI',
-                timeIn: new Date(2025, 0, 27, 8, 0, 0),
-                timeOut: new Date(2025, 0, 27, 17, 0, 0),
+                timeIn: new Date(new Date().setHours(8, 0, 0, 0)),
+                timeOut: new Date(new Date().setHours(17, 0, 0, 0)),
                 timeTotal: 8,
             },
         });
@@ -355,8 +363,8 @@ export const seedDatabase = async () => {
                 date: formatDate(new Date()),
                 status: 'DONE',
                 scheduleType: 'FIXED',
-                timeIn: new Date(2025, 0, 27, 8, 0, 0),
-                timeOut: new Date(2025, 0, 27, 17, 0, 0),
+                timeIn: new Date(new Date().setHours(8, 0, 0, 0)),
+                timeOut: new Date(new Date().setHours(17, 0, 0, 0)),
                 timeTotal: 8,
             },
         });
@@ -402,68 +410,50 @@ export const seedDatabase = async () => {
             },
         });
 
+        // // Time in for the day
+        // const res = await request('http://localhost:8080').post('/api/attendance/time-in').send({
+        //     employeeId: employee1.id,
+        //     timeStamp: (new Date(2025, 0, 28, 8, 0, 0))
+        // });
 
-        // Holiday seeds
-        await request('http://localhost:8080').post('/api/holiday').send({
-            name: 'Christmas',
-            month: 'DECEMBER',
-            day: 25,
+        // const res1 = await request('http://localhost:8080').post('/api/attendance/time-out').send({
+        //     employeeId: employee1.id,
+        //     timeStamp: (new Date(2025, 0, 28, 17, 0, 0))
+        // });
+
+        // console.log(res.body, res1.body);
+
+
+        // // Holiday seeds
+        // await request('http://localhost:8080').post('/api/holiday').send({
+        //     name: 'Christmas',
+        //     month: 'DECEMBER',
+        //     day: 25,
+        // });
+
+        // await request('http://localhost:8080').post('/api/holiday').send({
+        //     name: 'New Year',
+        //     month: 'JANUARY',
+        //     day: 1,
+        // });
+        // Create Holidays
+        await prisma.holiday.create({
+            data: {
+                name: 'Christmas',
+                month: 'DECEMBER',
+                day: 25,
+            },
         });
 
-        await request('http://localhost:8080').post('/api/holiday').send({
-            name: 'New Year',
-            month: 'JANUARY',
-            day: 1,
+        await prisma.holiday.create({
+            data: {
+                name: 'New Year',
+                month: 'JANUARY',
+                day: 1,
+            },
         });
 
-        // Special Holidays in the Philippine Calendar
-        await request('http://localhost:8080').post('/api/holiday').send({
-            name: 'Chinese New Year',
-            month: 'FEBRUARY',
-            day: 1,
-        });
-
-        await request('http://localhost:8080').post('/api/holiday').send({
-            name: 'EDSA People Power Revolution Anniversary',
-            month: 'FEBRUARY',
-            day: 25,
-        });
-
-        await request('http://localhost:8080').post('/api/holiday').send({
-            name: 'Black Saturday',
-            month: 'APRIL',
-            day: 16,
-        });
-
-        await request('http://localhost:8080').post('/api/holiday').send({
-            name: 'Ninoy Aquino Day',
-            month: 'AUGUST',
-            day: 21,
-        });
-
-        await request('http://localhost:8080').post('/api/holiday').send({
-            name: 'All Saints Day',
-            month: 'NOVEMBER',
-            day: 1,
-        });
-
-        await request('http://localhost:8080').post('/api/holiday').send({
-            name: 'All Souls Day',
-            month: 'NOVEMBER',
-            day: 2,
-        });
-
-        await request('http://localhost:8080').post('/api/holiday').send({
-            name: 'Bonifacio Day',
-            month: 'NOVEMBER',
-            day: 30,
-        });
-
-        await request('http://localhost:8080').post('/api/holiday').send({
-            name: 'Labour Day',
-            month: 'MAY',
-            day: 1,
-        });
+        console.log('Data seeded successfully');
 
     } catch (error) {
         console.error('Error seeding data:', error);
