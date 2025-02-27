@@ -90,7 +90,7 @@ model DepartmentSchedule {
 model PersonalSchedule {
   id   Int     @id @default(autoincrement())
   name String? @default("Personal Schedule") @Db.VarChar(100)
-  day  Day[]   @default([SATURDAY])
+  day  Day[]
 
   // Relationships
   scheduleId Int      @unique
@@ -187,12 +187,13 @@ model OneTimeSchedule {
 model RequestOneTimeSchedule {
   id                Int           @id @default(autoincrement())
   employeeId        Int           @unique
-  employee          Employee      @relation(fields: [employeeId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  Employee          Employee      @relation(fields: [employeeId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   scheduleType      ScheduleType
-  timeIn            DateTime      @default(now()) @Db.Timestamptz()
-  timeOut           DateTime?
+  startTime         DateTime
+  startTimeLimit    DateTime?
+  endTime           DateTime
   isAllowedOvertime Boolean?      @default(false)
-  day               Day[]         @default([SATURDAY])
+  day               Day[]
   status            RequestStatus @default(SUBMITTED)
   reason            String?
   createdAt         DateTime      @default(now())
@@ -204,13 +205,14 @@ model RequestOneTimeSchedule {
 model RequestChangePersonalSchedule {
   id                Int           @id @default(autoincrement())
   employeeId        Int
-  employee          Employee      @relation(fields: [employeeId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  Employee          Employee      @relation(fields: [employeeId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   scheduleType      ScheduleType
-  timeIn            DateTime      @default(now()) @Db.Timestamptz()
-  timeOut           DateTime?
-  isAllowedOvertime Boolean?      @default(false)
+  startTime         DateTime
+  startTimeLimit    DateTime?
+  endTime           DateTime
   limitOvertime     Float?        @default(0)
-  day               Day[]         @default([SATURDAY])
+  isAllowedOvertime Boolean?      @default(false)
+  day               Day[]
   status            RequestStatus @default(SUBMITTED)
   reason            String?
   createdAt         DateTime      @default(now())
