@@ -1,4 +1,4 @@
-import { Schedule } from "@prisma/client";
+import { RequestStatus, Schedule } from "@prisma/client";
 import { isAfter } from "date-fns";
 import { z } from "zod";
 
@@ -107,4 +107,21 @@ function validateCreatePersonalSchedule(schedule: any) {
     validateCreateSchedule(scheduleProps);
 }
 
-export { validateCreateRoleSchedule, validateCreatePersonalSchedule };
+function validateRequestChangePersonalSchedule(data: any) {
+    const personalScheduleChangeValidationSchema = z.object({
+        employeeId: z.number(),
+        scheduleType: z.string(),
+        day: z.array(z.enum(['SUNDAY', 'MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY'])).nonempty(),
+        startTime: z.date(),
+        startTimeLimit: z.date().optional(),
+        endTime: z.date(),
+        isAllowedOvertime: z.boolean().optional(),
+        reason: z.string().optional(),
+        limitOvertime: z.number().optional(),
+        status: z.enum(["APPROVED_BY_ADMIN", "APPROVED_BY_TEAM_LEADER", "REJECTED_BY_ADMIN", "REJECTED_BY_TEAM_LEADER", "SUBMITTED"]),
+    })
+
+    personalScheduleChangeValidationSchema.parse(data);
+};
+
+export { validateCreateRoleSchedule, validateCreatePersonalSchedule, validateRequestChangePersonalSchedule };
