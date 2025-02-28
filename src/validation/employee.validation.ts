@@ -1,4 +1,3 @@
-import { Employee } from "../types";
 import { z } from "zod";
 
 
@@ -10,7 +9,7 @@ function validateCreateOneEmployee(employee: any) {
         lastName: z.string().min(2).max(50),
         middleName: z.string().min(1).max(50),
         role: z.string().min(2).max(50).optional(),
-        accessLevel: z.enum(["ADMIN", "TEAM_LEADER", "EMPLOYEE"]),
+        accessLevel: z.enum(["ADMIN", "TEAM_LEADER", "EMPLOYEE", "AUDITOR", "SUPER_AUDITOR"]),
         isActive: z.boolean().optional(),
         passwordCredentials: z.string().min(8).max(30),
         departmentId: z.number().optional(),
@@ -30,7 +29,7 @@ function validateUpdateEmployee(employee: any) {
         lastName: z.string().min(2).max(50).optional(),
         middleName: z.string().min(1).max(50).optional(),
         role: z.string().min(2).max(50).optional(),
-        accessLevel: z.enum(["ADMIN", "TEAM_LEADER", "EMPLOYEE"]).optional(),
+        accessLevel: z.enum(["ADMIN", "TEAM_LEADER", "EMPLOYEE", "AUDITOR", "SUPER_AUDITOR"]).optional(),
         isActive: z.boolean().optional(),
         passwordCredentials: z.string().min(8).max(30).optional(),
         departmentId: z.number().optional(),
@@ -48,7 +47,7 @@ function validateEmployee(employee: any) {
         lastName: z.string().min(2).max(50),
         middleName: z.string().min(2).max(50),
         role: z.string().min(2).max(50),
-        accessLevel: z.enum(["ADMIN", "TEAM_LEADER", "EMPLOYEE"]),
+        accessLevel: z.enum(["ADMIN", "TEAM_LEADER", "EMPLOYEE", "AUDITOR", "SUPER_AUDITOR"]),
         isActive: z.boolean().optional(),
         passwordCredentials: z.string().min(8).max(30),
         departmentId: z.number().optional(),
