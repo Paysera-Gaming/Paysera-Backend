@@ -18,7 +18,12 @@ export class DepartmentService {
                         middleName: true,
                         accessLevel: true,
                         isActive: true,
+                        departmentId: true,
                         role: true,
+                        email: true,
+                        isAllowedRequestOvertime: true,
+                        createdAt: true,
+                        updatedAt: true,
                     }
                 },
                 Leader: {
@@ -30,7 +35,12 @@ export class DepartmentService {
                         middleName: true,
                         accessLevel: true,
                         isActive: true,
+                        departmentId: true,
                         role: true,
+                        email: true,
+                        isAllowedRequestOvertime: true,
+                        createdAt: true,
+                        updatedAt: true,
                     }
                 }
             }
@@ -41,7 +51,40 @@ export class DepartmentService {
         const department = await prisma.department.findFirst({
             where: { id: departmentId },
             include: {
-                Employees: true
+                Employees: {
+                    select: {
+                        id: true,
+                        username: true,
+                        firstName: true,
+                        lastName: true,
+                        middleName: true,
+                        accessLevel: true,
+                        isActive: true,
+                        departmentId: true,
+                        role: true,
+                        email: true,
+                        isAllowedRequestOvertime: true,
+                        createdAt: true,
+                        updatedAt: true,
+                    }
+                },
+                Leader: {
+                    select: {
+                        id: true,
+                        username: true,
+                        firstName: true,
+                        lastName: true,
+                        middleName: true,
+                        accessLevel: true,
+                        isActive: true,
+                        departmentId: true,
+                        role: true,
+                        email: true,
+                        isAllowedRequestOvertime: true,
+                        createdAt: true,
+                        updatedAt: true,
+                    }
+                }
             }
         });
 
@@ -53,8 +96,40 @@ export class DepartmentService {
             where: { id: departmentId },
             include: {
                 DepartmentSchedule: true,
-                Employees: true,
-                Leader: true
+                Employees: {
+                    select: {
+                        id: true,
+                        username: true,
+                        firstName: true,
+                        lastName: true,
+                        middleName: true,
+                        accessLevel: true,
+                        isActive: true,
+                        departmentId: true,
+                        role: true,
+                        email: true,
+                        isAllowedRequestOvertime: true,
+                        createdAt: true,
+                        updatedAt: true,
+                    }
+                },
+                Leader: {
+                    select: {
+                        id: true,
+                        username: true,
+                        firstName: true,
+                        lastName: true,
+                        middleName: true,
+                        accessLevel: true,
+                        isActive: true,
+                        departmentId: true,
+                        role: true,
+                        email: true,
+                        isAllowedRequestOvertime: true,
+                        createdAt: true,
+                        updatedAt: true,
+                    }
+                }
             },
         });
 
