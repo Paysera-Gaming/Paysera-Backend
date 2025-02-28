@@ -29,8 +29,8 @@ model Attendance {
   isRejectedOvertime   Boolean?         @default(false)
   limitOvertime        Float?           @default(0)
   lunchTimeTotal       Float?           @default(0)
-  createdAt            DateTime         @default(now())
-  updatedAt            DateTime         @updatedAt
+  createdAt            DateTime?        @default(now())
+  updatedAt            DateTime?        @updatedAt
 
   @@index([date])
   @@index([employeeId, date])
@@ -62,8 +62,8 @@ model Schedule {
   PersonalSchedule   PersonalSchedule?
   OneTimeSchedule    OneTimeSchedule?
 
-  updatedAt DateTime @updatedAt
-  createdAt DateTime @default(now())
+  updatedAt DateTime? @updatedAt
+  createdAt DateTime? @default(now())
 
   @@index([startTime, endTime])
   @@map("Schedule")
@@ -80,8 +80,8 @@ model DepartmentSchedule {
   departmentId Int
   Department   Department @relation(fields: [departmentId], references: [id], onDelete: Cascade, onUpdate: Cascade)
 
-  updatedAt DateTime @updatedAt
-  createdAt DateTime @default(now())
+  updatedAt DateTime? @updatedAt
+  createdAt DateTime? @default(now())
 
   @@index([departmentId, scheduleId, role])
   @@map("DepartmentSchedule")
@@ -97,6 +97,9 @@ model PersonalSchedule {
   Schedule   Schedule @relation(fields: [scheduleId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   employeeId Int      @unique
   Employee   Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+  updatedAt DateTime? @updatedAt
+  createdAt DateTime? @default(now())
 
   @@map("PersonalSchedule")
 }
@@ -121,11 +124,11 @@ model Employee {
   PersonalSchedule         PersonalSchedule?
   RequestChangeSchedule    RequestChangePersonalSchedule[]
   RequestOneTimeSchedule   RequestOneTimeSchedule[]
+  Attendance               Attendance[]
+  OneTimeSchedule          OneTimeSchedule[]
 
-  createdAt       DateTime          @default(now())
-  updatedAt       DateTime          @updatedAt
-  Attendance      Attendance[]
-  OneTimeSchedule OneTimeSchedule[]
+  createdAt DateTime? @default(now())
+  updatedAt DateTime? @updatedAt
 
   @@index([accessLevel])
   @@index([departmentId, role])
@@ -140,8 +143,8 @@ model Department {
   DepartmentSchedule DepartmentSchedule[]
   Employees          Employee[]           @relation("DepartmentEmployees")
 
-  updatedAt DateTime @updatedAt
-  createdAt DateTime @default(now())
+  createdAt DateTime? @default(now())
+  updatedAt DateTime? @updatedAt
 
   @@map("Department")
 }
@@ -152,18 +155,18 @@ model Holiday {
   month Month  @default(JANUARY)
   day   Int    @default(1)
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt DateTime? @default(now())
+  updatedAt DateTime? @updatedAt
 
   @@map("Holiday")
 }
 
 model Announcement {
-  id        Int      @id @default(autoincrement())
+  id        Int       @id @default(autoincrement())
   title     String
   body      String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt DateTime? @default(now())
+  updatedAt DateTime? @updatedAt
 
   @@map("Announcement")
 }
@@ -175,10 +178,10 @@ model OneTimeSchedule {
   employee   Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   date       String
 
-  scheduleId Int      @unique
-  Schedule   Schedule @relation(fields: [scheduleId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  scheduleId Int       @unique
+  Schedule   Schedule  @relation(fields: [scheduleId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  createdAt  DateTime? @default(now())
+  updatedAt  DateTime? @updatedAt
 
   @@index([employeeId, date])
   @@map("OneTimeSchedule")
@@ -196,8 +199,8 @@ model RequestOneTimeSchedule {
   day               Day[]
   status            RequestStatus @default(SUBMITTED)
   reason            String?
-  createdAt         DateTime      @default(now())
-  updatedAt         DateTime      @updatedAt
+  createdAt         DateTime?     @default(now())
+  updatedAt         DateTime?     @updatedAt
 
   @@map("RequestOneTimeSchedule")
 }
@@ -215,8 +218,8 @@ model RequestChangePersonalSchedule {
   day               Day[]
   status            RequestStatus @default(SUBMITTED)
   reason            String?
-  createdAt         DateTime      @default(now())
-  updatedAt         DateTime      @updatedAt
+  createdAt         DateTime?     @default(now())
+  updatedAt         DateTime?     @updatedAt
 
   @@map("RequestChangeSchedule")
 }
@@ -255,7 +258,8 @@ enum AttendanceStatus {
 enum RequestStatus {
   APPROVED_BY_ADMIN
   APPROVED_BY_TEAM_LEADER
-  REJECTED
+  REJECTED_BY_ADMIN
+  REJECTED_BY_TEAM_LEADER
   SUBMITTED
 }
 
