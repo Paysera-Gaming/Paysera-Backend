@@ -1,7 +1,19 @@
+import { AccessLevel } from "@prisma/client";
 import { prisma } from "../config/database";
-import { raiseHttpError } from '../middlewares/errorHandler';
-import { Employee } from '@prisma/client';
 
+interface Employee {
+    id?: number;
+    email: string;
+    username: string;
+    firstName: string;
+    lastName: string;
+    middleName: string;
+    role: string;
+    passwordCredentials: string;
+    isAllowedRequestOvertime: boolean;
+    accessLevel: AccessLevel;
+    isActive?: boolean;
+}
 export class EmployeeService {
     static async getAllEmployees(departmentId?: number, role?: string) {
         const allEmployees = await prisma.employee.findMany({
@@ -11,7 +23,6 @@ export class EmployeeService {
             },
             select: {
                 id: true,
-                email: true,
                 username: true,
                 firstName: true,
                 lastName: true,
@@ -20,6 +31,10 @@ export class EmployeeService {
                 isActive: true,
                 departmentId: true,
                 role: true,
+                email: true,
+                isAllowedRequestOvertime: true,
+                createdAt: true,
+                updatedAt: true,
             },
             orderBy: {
                 updatedAt: "desc",
@@ -44,6 +59,10 @@ export class EmployeeService {
                 isActive: true,
                 departmentId: true,
                 role: true,
+                email: true,
+                isAllowedRequestOvertime: true,
+                createdAt: true,
+                updatedAt: true,
             },
         });
 
@@ -65,6 +84,10 @@ export class EmployeeService {
                 isActive: true,
                 departmentId: true,
                 role: true,
+                email: true,
+                isAllowedRequestOvertime: true,
+                createdAt: true,
+                updatedAt: true,
             },
         });
 
@@ -86,6 +109,11 @@ export class EmployeeService {
                 isActive: true,
                 departmentId: true,
                 role: true,
+                email: true,
+                isAllowedRequestOvertime: true,
+                createdAt: true,
+                updatedAt: true,
+
             },
         });
 
@@ -107,6 +135,10 @@ export class EmployeeService {
                 isActive: true,
                 departmentId: true,
                 role: true,
+                email: true,
+                isAllowedRequestOvertime: true,
+                createdAt: true,
+                updatedAt: true,
             },
         });
 
@@ -128,6 +160,10 @@ export class EmployeeService {
                 isActive: true,
                 departmentId: true,
                 role: true,
+                email: true,
+                isAllowedRequestOvertime: true,
+                createdAt: true,
+                updatedAt: true,
             },
         });
 
@@ -149,6 +185,10 @@ export class EmployeeService {
                 isActive: true,
                 departmentId: true,
                 role: true,
+                email: true,
+                isAllowedRequestOvertime: true,
+                createdAt: true,
+                updatedAt: true,
             },
         });
 
@@ -166,7 +206,7 @@ export class EmployeeService {
         return employee;
     }
     static async createEmployee(data: Employee) {
-        await prisma.employee.create({
+        return await prisma.employee.create({
             data: {
                 email: data.email,
                 username: data.username,
@@ -177,6 +217,7 @@ export class EmployeeService {
                 isActive: data.isActive,
                 passwordCredentials: data.passwordCredentials,
                 role: data.role,
+                isAllowedRequestOvertime: data.isAllowedRequestOvertime,
             },
         });
     }
