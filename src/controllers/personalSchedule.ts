@@ -1,6 +1,6 @@
 import { initializeHourTimeZone } from '../utils/date';
 import { raiseHttpError } from '../middlewares/errorHandler';
-import { validateCreatePersonalSchedule } from '../validation/schedule.validation';
+import { validateCreatePersonalSchedule, validateRequestChangePersonalSchedule } from '../validation/schedule.validation';
 import { Request, Response } from 'express';
 import { isAfter } from 'date-fns';
 import { validateUpdatePersonalSchedule } from '../validation/scheduleUpdate.validation';
@@ -152,7 +152,7 @@ export const PersonalScheduleController = {
     },
 
     // DELETE /personal-schedule/:id
-    async removePersonalSchedule(req: Request, res: Response) {
+    async deletePersonalSchedule(req: Request, res: Response) {
         const personalScheduleId = Number(req.params.id);
         if (!personalScheduleId) {
             throw raiseHttpError(400, "Invalid personal schedule ID");
@@ -172,6 +172,110 @@ export const PersonalScheduleController = {
         await PersonalScheduleService.deleteSchedule(personalScheduleId);
         io.emit('personal-schedule');
         return res.status(200).send(`Personal schedule of ${schedule.name} has been deleted`);
+    },
+
+    async getAllRequestedChangePersonalSchedule(req: Request, res: Response) {
+        const requestedChangePersonalSchedule = await PersonalScheduleService.getAllRequestChangeSchedule();
+        res.status(200).send(requestedChangePersonalSchedule);
+    },
+
+    async getRequestedChangePersonalSchedule(req: Request, res: Response) {
+        const requestId = Number(req.params.id);
+        if (!requestId) {
+            throw raiseHttpError(400, "Invalid request ID");
+        }
+        const requestedChangePersonalSchedule = await PersonalScheduleService.getRequestChangeScheduleById(requestId);
+
+        if (!requestedChangePersonalSchedule) {
+            throw raiseHttpError(404, "Requested change personal schedule not found");
+        }
+        res.status(200).send(requestedChangePersonalSchedule);
+    },
+
+    // REQUEST CHANGE OF PERSONAL SCHEDULE
+    async requestChangePersonalSchedule(req: Request, res: Response) {
+        const employeeId = Number(req.body.employeeId);
+        if (!employeeId) {
+            throw raiseHttpError(400, "Invalid employee ID");
+        }
+
+        const employee = await EmployeeService.getEmployeeById(employeeId);
+        if (!employee) {
+            throw raiseHttpError(404, "Employee not found");
+        }
+
+        const existingEmployeePersonalSchedule = await PersonalScheduleService.findPersonalScheduleByEmployeeId(employeeId);
+        if (!existingEmployeePersonalSchedule) {
+            throw raiseHttpError(404, "Employee does not have a personal schedule");
+        }
+
+        const body = {
+            employeeId: Number(req.body.employeeId),
+            scheduleType: req.body.scheduleType,
+            day: req.body.day,
+            startTime: initializeHourTimeZone(req.body.startTime), endTime: initializeHourTimeZone(req.body.endTime),
+            isAllowedOvertime: req.body.isAllowedOvertime,
+            reason: req.body.reason,
+            limitOvertime: req.body.limitOvertime,
+            status: req.body.status,
+            ...(req.body.startTimeLimit && {
+                startTimeLimit: initializeHourTimeZone(req.body.startTimeLimit)
+            }),
+        };
+
+        validateRequestChangePersonalSchedule(body);
+        await PersonalScheduleService.requestChangeSchedule(employeeId, { ...existingEmployeePersonalSchedule, ...body });
+
+        io.emit('/personal-schedule/request-change');
+        return res.status(200).send(`Change requested for employee ID: ${employeeId} to update personal schedule successfully`);
+    },
+
+    async updateRequestedChangePersonalSchedule(req: Request, res: Response) {
+        const requestId = Number(req.params.id);
+        if (!requestId) {
+            throw raiseHttpError(400, "Invalid request ID");
+        }
+
+        const existingRequest = await PersonalScheduleService.getRequestChangeScheduleById(requestId);
+        if (!existingRequest) {
+            throw raiseHttpError(404, "Requested change personal schedule not found");
+        }
+
+        const body = {
+            employeeId: Number(req.body.employeeId),
+            scheduleType: req.body.scheduleType,
+            day: req.body.day,
+            startTime: initializeHourTimeZone(req.body.startTime),
+            endTime: initializeHourTimeZone(req.body.endTime),
+            isAllowedOvertime: req.body.isAllowedOvertime,
+            reason: req.body.reason,
+            limitOvertime: req.body.limitOvertime,
+            status: req.body.status,
+            ...(req.body.startTimeLimit && {
+                startTimeLimit: initializeHourTimeZone(req.body.startTimeLimit)
+            }),
+        };
+
+        validateRequestChangePersonalSchedule(body);
+        await PersonalScheduleService.updateRequestChangeSchedule(requestId, { ...existingRequest, ...body });
+        io.emit('/personal-schedule/request-change');
+        return res.status(200).send(`Requested change personal schedule has been updated`);
+    },
+
+    async deleteRequestedChangePersonalSchedule(req: Request, res: Response) {
+        const requestId = Number(req.params.id);
+        if (!requestId) {
+            throw raiseHttpError(400, "Invalid request ID");
+        }
+
+        const existingRequest = await PersonalScheduleService.getRequestChangeScheduleById(requestId);
+        if (!existingRequest) {
+            throw raiseHttpError(404, "Requested change personal schedule not found");
+        }
+
+        await PersonalScheduleService.deleteRequestChangeSchedule(requestId);
+        io.emit('/personal-schedule/request-change');
+        return res.status(200).send(`Requested change personal schedule has been deleted`);
     }
 };
 
