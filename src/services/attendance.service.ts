@@ -14,9 +14,14 @@ export class AttendanceService {
                         firstName: true,
                         lastName: true,
                         middleName: true,
-                        role: true,
                         accessLevel: true,
                         isActive: true,
+                        departmentId: true,
+                        role: true,
+                        email: true,
+                        isAllowedRequestOvertime: true,
+                        createdAt: true,
+                        updatedAt: true,
                     }
                 }
             }
@@ -34,9 +39,14 @@ export class AttendanceService {
                         firstName: true,
                         lastName: true,
                         middleName: true,
-                        role: true,
                         accessLevel: true,
                         isActive: true,
+                        departmentId: true,
+                        role: true,
+                        email: true,
+                        isAllowedRequestOvertime: true,
+                        createdAt: true,
+                        updatedAt: true,
                     }
                 }
             }
