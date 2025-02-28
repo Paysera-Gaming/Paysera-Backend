@@ -1,4 +1,4 @@
-import { Day, ScheduleType } from '@prisma/client';
+import { Day, RequestStatus, ScheduleType } from '@prisma/client';
 import { prisma } from '../config/database';
 
 interface PersonalSchedule {
@@ -10,6 +10,17 @@ interface PersonalSchedule {
     day: Day[];
 }
 
+interface RequestChangePersonalSchedule {
+    scheduleType: ScheduleType;
+    day: Day[];
+    startTime: Date;
+    startTimeLimit?: Date;
+    endTime: Date;
+    isAllowedOvertime: boolean;
+    reason: string;
+    limitOvertime: number;
+    status: RequestStatus;
+}
 
 
 export class PersonalScheduleService {
@@ -36,7 +47,25 @@ export class PersonalScheduleService {
     static async findPersonalScheduleByEmployeeId(employeeId: number) {
         return await prisma.personalSchedule.findUnique({
             where: { employeeId: employeeId },
-            include: { Employee: true }
+            include: {
+                Employee: {
+                    select: {
+                        id: true,
+                        username: true,
+                        firstName: true,
+                        lastName: true,
+                        middleName: true,
+                        accessLevel: true,
+                        isActive: true,
+                        departmentId: true,
+                        role: true,
+                        email: true,
+                        isAllowedRequestOvertime: true,
+                        createdAt: true,
+                        updatedAt: true,
+                    }
+                }
+            }
         });
     }
 
@@ -105,6 +134,106 @@ export class PersonalScheduleService {
             where: { id: personalScheduleId },
         });
     }
-}
 
+    static async requestChangeSchedule(employeeId: number, data: RequestChangePersonalSchedule) {
+        const requestChangeSchedule = await prisma.requestChangePersonalSchedule.create({
+            data: {
+                scheduleType: data.scheduleType,
+                day: [...data.day],
+                startTime: data.startTime,
+                startTimeLimit: data.startTimeLimit,
+                endTime: data.endTime,
+                isAllowedOvertime: data.isAllowedOvertime,
+                reason: data.reason,
+                limitOvertime: data.limitOvertime,
+                status: data.status,
+                employeeId: employeeId,
+            },
+        });
+
+        return requestChangeSchedule;
+    }
+
+    static async getAllRequestChangeSchedule() {
+        return await prisma.requestChangePersonalSchedule.findMany({
+            include: {
+                Employee: {
+                    select: {
+                        id: true,
+                        username: true,
+                        firstName: true,
+                        lastName: true,
+                        middleName: true,
+                        accessLevel: true,
+                        isActive: true,
+                        departmentId: true,
+                        role: true,
+                        email: true,
+                        isAllowedRequestOvertime: true,
+                        createdAt: true,
+                        updatedAt: true,
+                    }
+                }
+            }
+        });
+    }
+
+    static async getRequestChangeScheduleById(requestChangeScheduleId: number) {
+        return await prisma.requestChangePersonalSchedule.findFirst({
+            where: { id: requestChangeScheduleId },
+            include: {
+                Employee: {
+                    select: {
+                        id: true,
+                        username: true,
+                        firstName: true,
+                        lastName: true,
+                        middleName: true,
+                        accessLevel: true,
+                        isActive: true,
+                        departmentId: true,
+                        role: true,
+                        email: true,
+                        isAllowedRequestOvertime: true,
+                        createdAt: true,
+                        updatedAt: true,
+                    }
+                }
+            }
+        });
+    }
+
+    static async getRequestChangeScheduleByEmployeeId(employeeId: number) {
+        return await prisma.requestChangePersonalSchedule.findFirst({
+            where: { employeeId: employeeId }
+        });
+    }
+
+    static async updateRequestChangeSchedule(requestChangeScheduleId: number, data: RequestChangePersonalSchedule) {
+        const updatedRequest = await prisma.requestChangePersonalSchedule.update({
+            where: { id: requestChangeScheduleId },
+            data: {
+                scheduleType: data.scheduleType,
+                day: [...data.day],
+                startTime: data.startTime,
+                startTimeLimit: data.startTimeLimit,
+                endTime: data.endTime,
+                isAllowedOvertime: data.isAllowedOvertime,
+                reason: data.reason,
+                limitOvertime: data.limitOvertime,
+                status: data.status,
+            }
+        });
+
+        return updatedRequest;
+    }
+
+    static async deleteRequestChangeSchedule(requestChangeScheduleId: number) {
+        const deletedRequest = await prisma.requestChangePersonalSchedule.delete({
+            where: { id: requestChangeScheduleId }
+        });
+
+        return deletedRequest;
+    }
+}
 export default PersonalScheduleService;
