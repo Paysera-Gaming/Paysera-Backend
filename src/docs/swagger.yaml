@@ -1781,6 +1781,8 @@ components:
         - ADMIN
         - TEAM_LEADER
         - EMPLOYEE
+        - AUDITOR
+        - SUPER_AUDITOR
     ScheduleType:
       type: string
       enum:
