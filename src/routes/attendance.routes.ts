@@ -27,8 +27,6 @@ routerAttendance.get('/today/:id', asyncHandler(getAttendanceOfEmployeeToday));
 
 routerAttendance.post('/time-in', asyncHandler(timeIn));
 routerAttendance.post('/time-out', asyncHandler(timeOut));
-// routerAttendance.post('/lunch-in', asyncHandler(lunchIn));
-// routerAttendance.post('/lunch-out', asyncHandler(lunchOut));
 routerAttendance.post('/request-overtime', asyncHandler(requestOverTimeRequest));
 routerAttendance.post('/accept-overtime', asyncHandler(acceptOvertimeRequest));
 
