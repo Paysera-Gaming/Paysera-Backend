@@ -24,6 +24,7 @@ model Attendance {
   timeHoursWorked      Float?
   overTimeTotal        Float?
   timeTotal            Float?
+  isLate               Boolean?         @default(false)
   isAllowedOvertime    Boolean?         @default(false)
   isRequestingOvertime Boolean?         @default(false)
   isRejectedOvertime   Boolean?         @default(false)
@@ -49,13 +50,9 @@ model Schedule {
   startTimeLimit DateTime?
 
   // Overtime fields
-  // limitWorkHoursDay Float?   @default(9)
-  // Applies to FLEXI and SUPER_FLEXI only
-  // allowedOvertime   Boolean? @default(false)
-
-  // lunchStartTime DateTime?
-  // lunchEndTime   DateTime?
-  // lunchTimeTotal Float?
+  limitWorkHoursDay Float?   @default(9)
+  allowedOvertime   Boolean? @default(false)
+  limitOvertime     Float?   @default(4)
 
   // Relationships
   DepartmentSchedule DepartmentSchedule?
@@ -196,6 +193,7 @@ model RequestOneTimeSchedule {
   startTimeLimit    DateTime?
   endTime           DateTime
   isAllowedOvertime Boolean?      @default(false)
+  totalHours        Float?        @default(9)
   day               Day[]
   status            RequestStatus @default(SUBMITTED)
   reason            String?
