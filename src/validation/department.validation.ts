@@ -19,6 +19,7 @@ function validateCreateDepartment(department: Department) {
     const departmentSchema = z.object({
         name: z.string().max(50),
         leaderId: z.number(),
+        auditorId: z.number().optional().nullable(),
         Leader: z.unknown().optional(),
         DepartmentSchedule: z.unknown().array().optional(),
         Employees: z.unknown().array().optional(),
@@ -31,6 +32,7 @@ function validateUpdateDepartment(department: any) {
     const departmentSchema = z.object({
         name: z.string().max(50),
         leaderId: z.number().optional(),
+        auditorId: z.number().optional().nullable(),
         Leader: z.unknown().optional(),
     });
 
