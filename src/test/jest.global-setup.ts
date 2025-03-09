@@ -9,13 +9,35 @@ export default async () => {
     console.log('Global Test Teardown');
     // Seed the database
     try {
+        const auditor = await prisma.employee.create({
+            data: {
+                email: "auditor1@gmail.com",
+                username: 'AUDITOR12345',
+                accessLevel: 'AUDITOR',
+                passwordCredentials: await bcrypt.hash('AUDITOR12345', configEnv.SALT_ROUNDS),
+                firstName: 'Auditor',
+                lastName: 'One',
+                middleName: 'A',
+                role: 'AUDITOR',
+            },
+        });
+
         // Create Departments
         const department1 = await prisma.department.create({
             data: {
                 name: 'department1',
+                Auditor: {
+                    connect: {
+                        id: auditor.id,
+                    },
+                },
+                Employees: {
+                    connect: {
+                        id: auditor.id,
+                    },
+                },
             },
         });
-
         const department2 = await prisma.department.create({
             data: {
                 name: 'department2',
@@ -79,6 +101,22 @@ export default async () => {
                 },
             },
         });
+
+        const leader3 = await prisma.employee.create({
+            data: {
+                email: "sample12@gmail.com",
+                username: 'TEAM_LEADER12345',
+                accessLevel: 'TEAM_LEADER',
+                passwordCredentials: hashPasswordL,
+                firstName: 'Leader1',
+                lastName: 'Leader1',
+                middleName: 'Leader1',
+                role: 'HR MANAGER',
+                departmentId: department1.id,
+
+            },
+        });
+
 
         const hashPasswordE = await bcrypt.hash('EMPLOYEE12345', configEnv.SALT_ROUNDS);
         // Create Employees
