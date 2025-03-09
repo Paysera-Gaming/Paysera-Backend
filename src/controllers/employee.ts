@@ -39,7 +39,11 @@ export const EmployeeController = {
     },
 
     async createEmployee(req: Request, res: Response) {
-        const data = req.body;
+        const data = {
+            ...req.body,
+            accessLevel: req.body.accessLevel.toUpperCase(),
+            role: req.body.role ? req.body.role.toUpperCase() : req.body.accessLevel.toUpperCase(),
+        }
         validateCreateOneEmployee(data);
 
         const existingEmployeeUsername = await EmployeeService.getEmployeeByUsername(data.username);
