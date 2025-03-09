@@ -75,6 +75,7 @@ export class AttendanceService {
                 timeHoursWorked: data.timeHoursWorked,
                 timeTotal: data.timeTotal,
                 lunchTimeTotal: data.lunchTimeTotal,
+                isLate: data.isLate,
             },
         });
     }
@@ -90,6 +91,7 @@ export class AttendanceService {
                 timeTotal: data.timeTotal,
                 overTimeTotal: data.overtimeTotal,
                 timeHoursWorked: data.timeHoursWorked,
+                isLate: data.isLate,
             },
         });
     }
@@ -98,11 +100,14 @@ export class AttendanceService {
         return await prisma.attendance.updateMany({
             where: { employeeId: employeeId },
             data: {
+                date: data.date,
                 status: data.status,
                 timeOut: data.timeOut,
-                timeHoursWorked: data.timeHoursWorked,
-                overTimeTotal: data.overtimeTotal,
+                timeIn: data.timeIn,
                 timeTotal: data.timeTotal,
+                overTimeTotal: data.overtimeTotal,
+                timeHoursWorked: data.timeHoursWorked,
+                isLate: data.isLate,
             },
         });
     }
