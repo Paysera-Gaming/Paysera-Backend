@@ -263,6 +263,9 @@ async function timeOut(req: Request, res: Response) {
             startTime: set(new Date(), { hours: 6, minutes: 0, seconds: 0, milliseconds: 0 }), // 6:00 AM
             endTime: set(new Date(), { hours: 23, minutes: 0, seconds: 0, milliseconds: 0 }), // 11:00 PM
             startTimeLimit: null,
+            limitOvertime: null,
+            limitWorkHoursDay: null,
+            allowedOvertime: null
         };
 
         currentSchedule = defaultSchedule;
