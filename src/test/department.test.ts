@@ -1,6 +1,7 @@
 import request from 'supertest';
 import app from '..';
 import { Department, Employee } from '@prisma/client';
+import EmployeeService from '../services/employee.service';
 
 describe('Department Routes Test', () => {
     let departmentList: Department[];
@@ -29,7 +30,8 @@ describe('Department Routes Test', () => {
         it('should create a new department', async () => {
             const body = {
                 name: 'Department POST',
-                leaderId: departmentList[0].leaderId
+                leaderId: departmentList[0].leaderId,
+
             };
 
             const response = await request(app)
@@ -58,7 +60,10 @@ describe('Department Routes Test', () => {
         it('should update a department', async () => {
             const response = await request(app)
                 .put(`/api/department/${departmentList[0].id}`)
-                .send({ name: 'Department PUT', })
+                .send({
+                    name: 'Department PUT', leaderId: departmentList[0].leaderId,
+                    auditorId: departmentList[0].auditorId
+                })
                 .expect(200);
         });
     });
@@ -93,13 +98,23 @@ describe('Department Routes Test', () => {
         });
 
         it('should return 400 error assign a employee as leader to a department', async () => {
-            const getEmployeeResponse = await request(app).get('/api/employee/only-employee').expect(200);
+            const createEmployee = await EmployeeService.createEmployee({
+                username: 'employee',
+                passwordCredentials: 'password',
+                email: 'employee@example.com',
+                firstName: 's',
+                lastName: 's',
+                middleName: 's',
+                role: 's',
+                isAllowedRequestOvertime: false,
+                accessLevel: 'EMPLOYEE'
+            });
 
             await request(app)
                 .put(`/api/department/${departmentId}/leader`)
                 .send({
                     departmentId: departmentId,
-                    leaderId: getEmployeeResponse.body[0].id,
+                    leaderId: createEmployee.id,
                 }).expect(400);
         });
 
@@ -130,6 +145,7 @@ describe('Department Routes Test', () => {
                 .get(`/api/department/${departmentList[0].id}/employee`).expect(200);
 
             expect(response.body).toBeInstanceOf(Array);
+            expect(response.body.length).toBeGreaterThanOrEqual(0);
         });
 
         it('should assign employee to department ', async () => {
@@ -154,15 +170,18 @@ describe('Department Routes Test', () => {
         });
 
         it('should remove employee from department', async () => {
-
-            await request(app)
-                .delete(`/api/department/${curEmployee.departmentId}/employee`)
+            const deptEmployee = await request(app).get(`/api/department/${departmentList[0].id}/employee`).expect(200);
+            const currentEmployee = deptEmployee.body[0];
+            const req = await request(app)
+                .delete(`/api/department/${currentEmployee.departmentId}/employee`)
                 .send({
-                    departmentId: curEmployee.departmentId,
-                    employeeId: curEmployee.id,
+                    departmentId: currentEmployee.departmentId,
+                    employeeId: currentEmployee.id,
                 }).expect(200);
 
-            const employeeResponse = await request(app).get(`/api/employee/${curEmployee.id}`).expect(200);
+            console.log(req.body, 'req.bodys');
+
+            const employeeResponse = await request(app).get(`/api/employee/${currentEmployee.id}`).expect(200);
             expect(employeeResponse.body.departmentId).toBe(null);
         });
     });
