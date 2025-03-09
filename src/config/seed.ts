@@ -10,9 +10,32 @@ export const seedDatabase = async () => {
 
     try {
         // Create Departments
+        const auditor = await prisma.employee.create({
+            data: {
+                email: "auditor1@gmail.com",
+                username: 'AUDITOR12345',
+                accessLevel: 'AUDITOR',
+                passwordCredentials: await bcrypt.hash('AUDITOR12345', configEnv.SALT_ROUNDS),
+                firstName: 'Auditor',
+                lastName: 'One',
+                middleName: 'A',
+                role: 'AUDITOR',
+            },
+        });
+
         const department1 = await prisma.department.create({
             data: {
                 name: 'department1',
+                Auditor: {
+                    connect: {
+                        id: auditor.id,
+                    },
+                },
+                Employees: {
+                    connect: {
+                        id: auditor.id,
+                    },
+                },
             },
         });
 
