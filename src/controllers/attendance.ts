@@ -49,6 +49,7 @@ export const AttendanceController = {
             timeIn: initializeDateTimeZone(parseISO(req.body.timeIn), timeZone),
             timeOut: initializeDateTimeZone(parseISO(req.body.timeOut), timeZone),
             overtimeTotal: req.body.overtimeTotal,
+            isLate: req.body.isLate === "true" ? true : false,
         };
 
         validateCreateAttendance(body);
@@ -90,6 +91,7 @@ export const AttendanceController = {
             timeIn: initializeDateTimeZone(req.body.timeIn),
             timeOut: initializeDateTimeZone(req.body.timeOut),
             overtimeTotal: req.body.overTimeTotal,
+            isLate: req.body.isLate === "true",
         }
 
         validateUpdateAttendance(body);
@@ -119,6 +121,7 @@ export const AttendanceController = {
             timeTotal: totalHoursWorked,
             overtimeTotal: overtimeTotal,
             timeHoursWorked: totalHoursWorked,
+            isLate: req.body.isLate === "true",
         };
 
         await AttendanceService.updateAttendance(attendanceId, data);
@@ -155,6 +158,7 @@ export const AttendanceController = {
             timeHoursWorked: totalHours,
             overtimeTotal: req.body.overTimeTotal,
             timeTotal: totalHours,
+            isLate: req.body.isLate === "true",
         };
 
         await AttendanceService.updateAttendanceByEmployeeId(employeeId, data);
@@ -179,6 +183,6 @@ export const AttendanceController = {
 
         io.emit('attendance');
         res.status(200).send("Attendance record deleted successfully");
-    }
+    },
 };
 
