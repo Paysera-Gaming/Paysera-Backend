@@ -54,19 +54,31 @@ export const departmentController = {
     createDepartment: async (req: Request, res: Response) => {
         validateCreateDepartment(req.body);
 
-        const teamLead = await EmployeeService.getEmployeeById(req.body.leaderId);
-        if (!teamLead) {
-            throw raiseHttpError(404, "Leader not found");
-        } if (teamLead.accessLevel === "EMPLOYEE") {
-            throw raiseHttpError(400, "Employee is not an admin or team leader");
+        const { name, leaderId, auditorId } = req.body;
+
+        if (leaderId) {
+            const teamLead = await EmployeeService.getEmployeeById(leaderId);
+            if (!teamLead) {
+                throw raiseHttpError(404, "Leader not found");
+            } else if (teamLead.accessLevel === "EMPLOYEE") {
+                throw raiseHttpError(400, "Employee is not an admin or team leader");
+            }
         }
 
-        const updatedData = { ...req.body, leaderId: req.body.leaderId };
-        const department = await DepartmentService.createDepartment(updatedData);
+        if (auditorId) {
+            const auditor = await EmployeeService.getEmployeeById(auditorId);
+            if (!auditor) {
+                throw raiseHttpError(404, "Auditor not found");
+            } else if (auditor.accessLevel !== "AUDITOR") {
+                throw raiseHttpError(400, "Employee is not an admin or team leader");
+            }
+        }
+
+        const departmentData = { name, leaderId, auditorId };
+        const department = await DepartmentService.createDepartment(departmentData);
 
         io.emit("department");
         res.status(201).send(department);
-
     },
 
     updateDepartmentById: async (req: Request, res: Response) => {
@@ -77,16 +89,18 @@ export const departmentController = {
 
         validateUpdateDepartment(req.body);
 
-
         const existingDepartment = await DepartmentService.getDepartmentById(departmentId);
         if (!existingDepartment) {
-            throw raiseHttpError(400, "Department already exists");
+            throw raiseHttpError(404, "Department not found");
         }
-
-
+        const body = {
+            name: req.body.name,
+            leaderId: req.body.leaderId,
+            auditorId: req.body.auditorId
+        }
         let teamLead;
-        if (req.body.leaderId) {
-            teamLead = await EmployeeService.getEmployeeById(req.body.leaderId);
+        if (body.leaderId) {
+            teamLead = await EmployeeService.getEmployeeById(body.leaderId);
             if (!teamLead) {
                 throw raiseHttpError(404, "Leader not found");
             } if (!teamLead) {
@@ -94,14 +108,26 @@ export const departmentController = {
             } else if (teamLead.accessLevel === "EMPLOYEE") {
                 throw raiseHttpError(400, "Employee is not an admin or team leader");
             }
-
         }
 
-        const updatedData = { ...existingDepartment, ...req.body };
-        const message = await DepartmentService.updateDepartmentById(departmentId, updatedData);
+        if (body.auditorId) {
+            const auditor = await EmployeeService.getEmployeeById(req.body.auditorId);
+            if (!auditor) {
+                throw raiseHttpError(404, "Auditor not found");
+            } if (auditor.accessLevel !== "AUDITOR") {
+                throw raiseHttpError(400, "Employee is not an admin or team leader");
+            }
+        }
+
+        const updatedData = {
+            name: body.name || existingDepartment.name,
+            leaderId: body.leaderId || existingDepartment.leaderId,
+            auditorId: body.auditorId || existingDepartment.auditorId
+        };
+        const department = await DepartmentService.updateDepartmentById(departmentId, updatedData);
 
         io.emit("department");
-        res.status(200).send(message);
+        res.status(200).send(department);
 
     },
 
