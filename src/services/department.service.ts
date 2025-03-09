@@ -42,6 +42,23 @@ export class DepartmentService {
                         createdAt: true,
                         updatedAt: true,
                     }
+                },
+                Auditor: {
+                    select: {
+                        id: true,
+                        username: true,
+                        firstName: true,
+                        lastName: true,
+                        middleName: true,
+                        accessLevel: true,
+                        isActive: true,
+                        departmentId: true,
+                        role: true,
+                        email: true,
+                        isAllowedRequestOvertime: true,
+                        createdAt: true,
+                        updatedAt: true,
+                    }
                 }
             }
         });
@@ -135,33 +152,37 @@ export class DepartmentService {
 
         return department;
     }
-
-    static async createDepartment(body: any) {
+    static async createDepartment(body: Partial<Department>) {
+        const { auditorId, name, leaderId } = body;
         return await prisma.department.create({
             data: {
-                name: body.name.trim() || "Department Name",
-                Leader: {
-                    connect: {
-                        id: body.leaderId
-                    }
-                },
+                name: name?.trim() || "Department Name",
+                Leader: leaderId ? { connect: { id: leaderId } } : undefined,
+                Auditor: auditorId ? { connect: { id: auditorId } } : undefined,
                 Employees: {
-                    connect: {
-                        id: body.leaderId
-                    }
+                    connect: [
+                        ...(leaderId ? [{ id: leaderId }] : []),
+                        ...(auditorId ? [{ id: auditorId }] : []),
+                    ]
                 }
-            },
+            }
         });
-
     }
 
     static async updateDepartmentById(departmentId: number, body: Partial<Department>) {
-        const { name, leaderId } = body;
+        const { name, leaderId, auditorId } = body;
         return await prisma.department.update({
             where: { id: departmentId },
             data: {
                 name: name?.trim(),
                 Leader: leaderId ? { connect: { id: leaderId } } : undefined,
+                Auditor: auditorId ? { connect: { id: auditorId } } : undefined,
+                Employees: {
+                    connect: [
+                        ...(leaderId ? [{ id: leaderId }] : []),
+                        ...(auditorId ? [{ id: auditorId }] : []),
+                    ]
+                }
             },
         });
     }
@@ -323,8 +344,6 @@ export class DepartmentService {
                 },
             }
         });
-
-
     }
 
     static async updateDepartmentRemoveLeader(leaderId: number) {
@@ -337,6 +356,25 @@ export class DepartmentService {
                 },
                 Department: {
                     disconnect: true
+                }
+            }
+        });
+    }
+
+    static async updateDepartmentAssignAuditor(departmentId: number, auditorId: number) {
+        return await prisma.employee.update({
+            where: { id: auditorId },
+            data: {
+                role: "AUDITOR",
+                Department: {
+                    connect: {
+                        id: departmentId
+                    }
+                },
+                AuditsDepartment: {
+                    connect: {
+                        id: departmentId
+                    }
                 }
             }
         });
