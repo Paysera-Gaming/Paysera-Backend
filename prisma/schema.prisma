@@ -113,16 +113,18 @@ model Employee {
   middleName          String?     @Db.VarChar(50)
   role                String?     @default("EMPLOYEE") @Db.VarChar(50) // Use this to denote job function like "PROGRAMMER", "DESIGNER"
 
-  isAllowedRequestOvertime Boolean?                        @default(false)
+  isAllowedRequestOvertime Boolean?    @default(false)
   // Relations 
   departmentId             Int?
-  Department               Department?                     @relation("DepartmentEmployees", fields: [departmentId], references: [id], onDelete: SetNull, onUpdate: Cascade)
-  LeadsDepartment          Department?                     @relation("DepartmentLeader")
-  PersonalSchedule         PersonalSchedule?
-  RequestChangeSchedule    RequestChangePersonalSchedule[]
-  RequestOneTimeSchedule   RequestOneTimeSchedule[]
-  Attendance               Attendance[]
-  OneTimeSchedule          OneTimeSchedule[]
+  Department               Department? @relation("DepartmentEmployees", fields: [departmentId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  LeadsDepartment          Department? @relation("DepartmentLeader")
+  AuditsDepartment         Department? @relation("DepartmentAuditor")
+
+  PersonalSchedule       PersonalSchedule?
+  RequestChangeSchedule  RequestChangePersonalSchedule[]
+  RequestOneTimeSchedule RequestOneTimeSchedule[]
+  Attendance             Attendance[]
+  OneTimeSchedule        OneTimeSchedule[]
 
   createdAt DateTime? @default(now())
   updatedAt DateTime? @updatedAt
@@ -138,7 +140,10 @@ model Department {
   leaderId           Int?                 @unique
   Leader             Employee?            @relation("DepartmentLeader", fields: [leaderId], references: [id], onDelete: SetNull, onUpdate: Cascade)
   DepartmentSchedule DepartmentSchedule[]
-  Employees          Employee[]           @relation("DepartmentEmployees")
+  auditorId          Int?                 @unique
+  Auditor            Employee?            @relation("DepartmentAuditor", fields: [auditorId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+
+  Employees Employee[] @relation("DepartmentEmployees")
 
   createdAt DateTime? @default(now())
   updatedAt DateTime? @updatedAt
