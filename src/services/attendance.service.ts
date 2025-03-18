@@ -62,7 +62,33 @@ export class AttendanceService {
         });
     }
 
+    static async getAttendanceByDate(date: string) {
+        return await prisma.attendance.findMany({
+            where: { date },
+            orderBy: {
+                date: 'asc',
+            },
+        });
+    }
+
+    static async getAttendanceByDateAndEmployeeId(date: string, employeeId: number) {
+        const data = await prisma.attendance.findFirst({
+            where: { date, employeeId },
+            orderBy: {
+                date: 'asc',
+            },
+        });
+
+        console.log(data, employeeId, date, "existingAttendance db");
+        return data;
+    }
+
     static async createAttendance(data: any) {
+        const existingAttendance = await AttendanceService.getAttendanceByDateAndEmployeeId(data.date, data.employeeId);
+        if (existingAttendance) {
+            throw new Error("Attendance record already exists");
+        }
+
         return await prisma.attendance.create({
             data: {
                 employeeId: data.employeeId,
@@ -75,7 +101,10 @@ export class AttendanceService {
                 timeHoursWorked: data.timeHoursWorked,
                 timeTotal: data.timeTotal,
                 lunchTimeTotal: data.lunchTimeTotal,
-                isLate: data.isLate,
+                isLate: data.isLate || false,
+                isAllowedOvertime: data.isAllowedOvertime,
+                RequestLeaveStatus: data.RequestLeaveStatus || 'NO_REQUEST',
+                RequestOverTimeStatus: data.RequestOverTimeStatus || 'NO_REQUEST',
             },
         });
     }
@@ -91,7 +120,10 @@ export class AttendanceService {
                 timeTotal: data.timeTotal,
                 overTimeTotal: data.overtimeTotal,
                 timeHoursWorked: data.timeHoursWorked,
-                isLate: data.isLate,
+                isLate: data.isLate || false,
+                lunchTimeTotal: data.lunchTimeTotal,
+                RequestLeaveStatus: data.RequestLeaveStatus || 'NO_REQUEST',
+                RequestOverTimeStatus: data.RequestOverTimeStatus || 'NO_REQUEST',
             },
         });
     }
