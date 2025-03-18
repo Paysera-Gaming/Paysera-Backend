@@ -13,25 +13,27 @@ datasource Db {
 // }
 
 model Attendance {
-  id                   Int              @id @default(autoincrement())
-  employeeId           Int
-  employee             Employee         @relation(fields: [employeeId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  date                 String
-  status               AttendanceStatus @default(ONGOING)
-  scheduleType         ScheduleType
-  timeIn               DateTime         @default(now()) @Db.Timestamptz()
-  timeOut              DateTime?
-  timeHoursWorked      Float?
-  overTimeTotal        Float?
-  timeTotal            Float?
-  isLate               Boolean?         @default(false)
-  isAllowedOvertime    Boolean?         @default(false)
-  isRequestingOvertime Boolean?         @default(false)
-  isRejectedOvertime   Boolean?         @default(false)
-  limitOvertime        Float?           @default(0)
-  lunchTimeTotal       Float?           @default(0)
-  createdAt            DateTime?        @default(now())
-  updatedAt            DateTime?        @updatedAt
+  id              Int              @id @default(autoincrement())
+  employeeId      Int
+  employee        Employee         @relation(fields: [employeeId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  date            String
+  scheduleType    ScheduleType
+  timeIn          DateTime         @default(now()) @Db.Timestamptz()
+  timeOut         DateTime?
+  timeHoursWorked Float?
+  overTimeTotal   Float?
+  timeTotal       Float?
+  limitOvertime   Float?           @default(0)
+  lunchTimeTotal  Float?           @default(0)
+  status          AttendanceStatus @default(ONGOING)
+
+  isLate                Boolean?       @default(false)
+  isAllowedOvertime     Boolean?       @default(false)
+  RequestOverTimeStatus RequestStatus? @default(NO_REQUEST)
+  RequestLeaveStatus    RequestStatus? @default(NO_REQUEST)
+
+  createdAt DateTime? @default(now())
+  updatedAt DateTime? @updatedAt
 
   @@index([date])
   @@index([employeeId, date])
@@ -173,7 +175,6 @@ model Announcement {
   @@map("Announcement")
 }
 
-// TODO IMPLEMENT REQUEST
 model OneTimeSchedule {
   id         Int      @id @default(autoincrement())
   employeeId Int      @unique
@@ -200,7 +201,7 @@ model RequestOneTimeSchedule {
   isAllowedOvertime Boolean?      @default(false)
   totalHours        Float?        @default(9)
   day               Day[]
-  status            RequestStatus @default(SUBMITTED)
+  status            RequestStatus @default(PENDING)
   reason            String?
   createdAt         DateTime?     @default(now())
   updatedAt         DateTime?     @updatedAt
@@ -219,7 +220,7 @@ model RequestChangePersonalSchedule {
   limitOvertime     Float?        @default(0)
   isAllowedOvertime Boolean?      @default(false)
   day               Day[]
-  status            RequestStatus @default(SUBMITTED)
+  status            RequestStatus @default(PENDING)
   reason            String?
   createdAt         DateTime?     @default(now())
   updatedAt         DateTime?     @updatedAt
@@ -252,10 +253,9 @@ enum Day {
 }
 
 enum AttendanceStatus {
-  BREAK
   DONE
-  PAID_LEAVE
   ONGOING
+  PAID_LEAVE
 }
 
 enum RequestStatus {
@@ -263,7 +263,8 @@ enum RequestStatus {
   APPROVED_BY_TEAM_LEADER
   REJECTED_BY_ADMIN
   REJECTED_BY_TEAM_LEADER
-  SUBMITTED
+  PENDING
+  NO_REQUEST
 }
 
 enum Month {
