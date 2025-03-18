@@ -109,6 +109,27 @@ export class PersonalScheduleService {
         return personalSchedule;
     }
 
+    static async updatePersonalScheduleByEmployeeId(employeeId: number, data: PersonalSchedule) {
+        const personalSchedule = await prisma.personalSchedule.update({
+            where: { employeeId },
+            data: {
+                name: data.name,
+                day: [...data.day],
+                Schedule: {
+                    update: {
+                        scheduleType: data.scheduleType,
+                        startTime: data.startTime,
+                        endTime: data.endTime,
+
+                    }
+                }
+            },
+        });
+
+        return personalSchedule;
+    }
+
+
     static async findPersonalScheduleById(personalScheduleId: number) {
         return await prisma.personalSchedule.findFirst({
             where: { id: personalScheduleId },
@@ -146,7 +167,7 @@ export class PersonalScheduleService {
                 isAllowedOvertime: data.isAllowedOvertime,
                 reason: data.reason,
                 limitOvertime: data.limitOvertime,
-                status: data.status,
+                status: data.status || RequestStatus.PENDING,
                 employeeId: employeeId,
             },
         });

@@ -14,6 +14,9 @@ routerPersonalSchedule.route('/request-change/:id')
     .put(teamLeaderMiddleware, asyncHandler(PersonalScheduleController.updateRequestedChangePersonalSchedule))
     .delete(teamLeaderMiddleware, asyncHandler(PersonalScheduleController.deleteRequestedChangePersonalSchedule));
 
+routerPersonalSchedule.route('/request-change/:id/apply')
+    .post(asyncHandler(PersonalScheduleController.applyRequestedChangePersonalSchedule));
+
 routerPersonalSchedule.route('/')
     .get(asyncHandler(PersonalScheduleController.getAllPersonalSchedules))
     .post(asyncHandler(PersonalScheduleController.createPersonalSchedule));
