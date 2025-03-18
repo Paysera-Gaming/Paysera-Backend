@@ -217,14 +217,17 @@ export const PersonalScheduleController = {
             isAllowedOvertime: req.body.isAllowedOvertime,
             reason: req.body.reason,
             limitOvertime: req.body.limitOvertime,
-            status: req.body.status,
+            status: req.body.status || '',
             ...(req.body.startTimeLimit && {
                 startTimeLimit: initializeHourTimeZone(req.body.startTimeLimit)
             }),
         };
 
         validateRequestChangePersonalSchedule(body);
-        await PersonalScheduleService.requestChangeSchedule(employeeId, { ...existingEmployeePersonalSchedule, ...body });
+        await PersonalScheduleService.requestChangeSchedule(employeeId, {
+            ...body,
+            status: 'PENDING'
+        });
 
         io.emit('/personal-schedule/request-change');
         return res.status(200).send(`Change requested for employee ID: ${employeeId} to update personal schedule successfully`);
@@ -242,24 +245,73 @@ export const PersonalScheduleController = {
         }
 
         const body = {
-            employeeId: Number(req.body.employeeId),
-            scheduleType: req.body.scheduleType,
-            day: req.body.day,
-            startTime: initializeHourTimeZone(req.body.startTime),
-            endTime: initializeHourTimeZone(req.body.endTime),
-            isAllowedOvertime: req.body.isAllowedOvertime,
-            reason: req.body.reason,
-            limitOvertime: req.body.limitOvertime,
-            status: req.body.status,
+            employeeId: Number(existingRequest.employeeId),
+            scheduleType: existingRequest.scheduleType,
+            day: existingRequest.day,
+            startTime: initializeHourTimeZone(existingRequest.startTime),
+            endTime: initializeHourTimeZone(existingRequest.endTime),
+            isAllowedOvertime: existingRequest.isAllowedOvertime,
+            reason: existingRequest.reason,
+            limitOvertime: existingRequest.limitOvertime,
+            status: existingRequest.status,
+            ...(req.body.startTimeLimit && {
+                startTimeLimit: initializeHourTimeZone(req.body.startTimeLimit)
+            }),
+            ...(existingRequest.startTimeLimit && {
+                startTimeLimit: initializeHourTimeZone(existingRequest.startTimeLimit)
+            }),
+        };
+
+        const dataUpdate = await PersonalScheduleService.updateRequestChangeSchedule(requestId, { ...existingRequest, ...body });
+        console.log(dataUpdate, "sample request change");
+
+
+        io.emit('/personal-schedule/request-change');
+        return res.status(200).send(`Requested change personal schedule has been updated`);
+    },
+
+    // apply request change personal schedule to update personal schedule
+    async applyRequestedChangePersonalSchedule(req: Request, res: Response) {
+        const requestId = Number(req.params.id);
+        if (!requestId) {
+            throw raiseHttpError(400, "Invalid request ID");
+        }
+
+        const existingRequest = await PersonalScheduleService.getRequestChangeScheduleById(requestId);
+        if (!existingRequest) {
+            throw raiseHttpError(404, "Requested change personal schedule not found");
+        }
+
+        const employeeId = Number(existingRequest.employeeId);
+        const existingEmployeePersonalSchedule = await PersonalScheduleService.findPersonalScheduleByEmployeeId(employeeId);
+        if (!existingEmployeePersonalSchedule) {
+            throw raiseHttpError(404, "Employee does not have a personal schedule");
+        }
+
+        const body = {
+            employeeId: Number(existingRequest.employeeId),
+            name: existingEmployeePersonalSchedule.name,
+            scheduleType: existingRequest.scheduleType,
+            startTime: initializeHourTimeZone(existingRequest.startTime),
+            endTime: initializeHourTimeZone(existingRequest.endTime),
+            day: existingRequest.day,
+            isAllowedOvertime: existingRequest.isAllowedOvertime,
+            reason: existingRequest.reason,
+            limitOvertime: existingRequest.limitOvertime,
+            status: existingRequest.status,
+            ...(existingRequest.startTimeLimit && {
+                startTimeLimit: initializeHourTimeZone(existingRequest.startTimeLimit)
+            }),
             ...(req.body.startTimeLimit && {
                 startTimeLimit: initializeHourTimeZone(req.body.startTimeLimit)
             }),
         };
 
-        validateRequestChangePersonalSchedule(body);
-        await PersonalScheduleService.updateRequestChangeSchedule(requestId, { ...existingRequest, ...body });
-        io.emit('/personal-schedule/request-change');
-        return res.status(200).send(`Requested change personal schedule has been updated`);
+        validateCreatePersonalSchedule(body);
+        await PersonalScheduleService.updatePersonalScheduleByEmployeeId(employeeId, { ...body });
+        await PersonalScheduleService.deleteRequestChangeSchedule(requestId);
+        io.emit('personal-schedule');
+        return res.status(200).send(`Personal schedule of employee ID: ${employeeId} has been updated`);
     },
 
     async deleteRequestedChangePersonalSchedule(req: Request, res: Response) {
