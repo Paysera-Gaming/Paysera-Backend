@@ -294,8 +294,6 @@ async function timeOut(req: Request, res: Response) {
         return raiseHttpError(400, 'Already clocked out');
     } else if (!currentAttendance.timeIn) {
         return raiseHttpError(400, 'Time in is required');
-    } else if (currentAttendance.status === 'BREAK') {
-        return raiseHttpError(400, 'Time currently on break');
     }
 
     // Use only time components for calculations
@@ -388,6 +386,7 @@ async function requestOverTimeRequest(req: Request, res: Response) {
         employeeId: Number(req.body.employeeId),
         timeStamp: initializeDateTimeZone(req.body.timeStamp),
         requestTotalOvertime: Number(req.body.limitOvertime),
+        RequestOverTimeStatus: 'PENDING',
     };
 
     if (isNaN(body.timeStamp.getTime())) {
@@ -456,14 +455,6 @@ async function requestOverTimeRequest(req: Request, res: Response) {
         return res.status(400).send("Total hours worked must be greater than 8 hours");
     }
 
-    // Update attendance record with correct total hours and overtime
-    await prisma.attendance.update({
-        where: { id: currentAttendance.id },
-        data: {
-            limitOvertime: Number(body.requestTotalOvertime),
-            isRequestingOvertime: true
-        },
-    });
 
     const timeOutAllowed = set(schedule.startTime, {
         hours: getHours(schedule.startTime) + 9 + body.requestTotalOvertime,
@@ -472,12 +463,22 @@ async function requestOverTimeRequest(req: Request, res: Response) {
         milliseconds: 0,
     });
 
+    // Update attendance record with correct total hours and overtime
+    await prisma.attendance.update({
+        where: { id: currentAttendance.id },
+        data: {
+            limitOvertime: Number(body.requestTotalOvertime),
+            RequestOverTimeStatus: 'PENDING',
+        },
+    });
+
     return res.status(200).send({
         date: currentAttendance.date,
-        allowedOvertime: true,
+        allowedOvertime: currentAttendance.isAllowedOvertime,
         limitOvertime: Number(body.requestTotalOvertime),
         totalHoursWorked,
-        timeOutAllowed: returnFormatDate(timeOutAllowed)
+        timeOutAllowed: returnFormatDate(timeOutAllowed),
+        message: 'Overtime request processed successfully'
     });
 }
 
@@ -491,21 +492,15 @@ async function acceptOvertimeRequest(req: Request, res: Response) {
         DONE_ATTENDANCE = true;
     }
 
-    if (req.body.isAllowedOvertime === undefined) {
-        return raiseHttpError(400, 'isAllowedOvertime overtime is required');
+    if (req.body.RequestOverTimeStatus === undefined) {
+        return raiseHttpError(400, 'RequestOverTimeStatus is required');
     }
-
-    if (req.body.isRejectedOvertime === undefined) {
-        return raiseHttpError(400, 'isRejectedOvertime overtime is required');
-    }
-
 
     const body = {
         employeeId: Number(req.body.employeeId),
         timeStamp: initializeDateTimeZone(req.body.timeStamp || new Date()),
         requestTotalOvertime: Number(req.body.limitOvertime),
-        isAllowedOvertime: req.body.isAllowedOvertime,
-        isRejectedOvertime: req.body.isRejectedOvertime
+        RequestOverTimeStatus: req.body.RequestOverTimeStatus,
     };
 
     const currentEmployee = await prisma.employee.findUnique({
@@ -566,11 +561,6 @@ async function acceptOvertimeRequest(req: Request, res: Response) {
         return raiseHttpError(400, 'Employee schedule not found');
     }
 
-
-    if (!currentAttendance) {
-        return raiseHttpError(400, 'Attendance record not found');
-    }
-
     const timeInFixed = initializeHourTimeZone(currentAttendance.timeIn, timeZone);
     const timeOutFixed = initializeHourTimeZone(body.timeStamp, timeZone);
     const totalMinutesWorked = differenceInMinutes(timeOutFixed, timeInFixed);
@@ -581,16 +571,7 @@ async function acceptOvertimeRequest(req: Request, res: Response) {
         return res.status(400).send("Total hours worked must be greater than 8 hours");
     }
 
-    // Update attendance record with correct total hours and overtime
-    await prisma.attendance.update({
-        where: { id: currentAttendance.id },
-        data: {
-            limitOvertime: Number(body.requestTotalOvertime),
-            isAllowedOvertime: Boolean(body.isAllowedOvertime),
-            isRejectedOvertime: Boolean(body.isRejectedOvertime),
-            isRequestingOvertime: false
-        },
-    });
+
 
     const timeOutAllowed = set(schedule.startTime, {
         hours: getHours(schedule.startTime) + 9 + body.requestTotalOvertime,
@@ -599,10 +580,20 @@ async function acceptOvertimeRequest(req: Request, res: Response) {
         milliseconds: 0,
     });
 
+    // Update attendance record with correct total hours and overtime
+    await prisma.attendance.update({
+        where: { id: currentAttendance.id },
+        data: {
+            limitOvertime: Number(body.requestTotalOvertime),
+            isAllowedOvertime: Boolean(body.RequestOverTimeStatus === 'APPROVED_BY_ADMIN'),
+            RequestOverTimeStatus: body.RequestOverTimeStatus
+        },
+    });
+
     return res.status(200).send({
         totalHoursWorked,
         date: currentAttendance.date,
-        allowedOvertime: true,
+        allowedOvertime: body.RequestOverTimeStatus === 'APPROVED_BY_ADMIN',
         limitOvertime: Number(body.requestTotalOvertime),
         timeOutAllowed: returnFormatDate(timeOutAllowed)
     });
