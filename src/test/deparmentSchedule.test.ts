@@ -4,6 +4,34 @@ import { server } from '..';
 
 describe('Department Schedule API', () => {
 
+    beforeAll(async () => {
+        // create department
+        const department = await prisma.department.create({
+            data: {
+                name: 'Test Department Schedule',
+            }
+        });
+        const schedule = await prisma.schedule.create({
+            data: {
+                scheduleType: 'FIXED',
+                startTime: (new Date('2024-08-01T08:00:00Z')),
+                startTimeLimit: (new Date('2024-08-01T10:00:00Z')),
+                endTime: (new Date('2024-08-01T16:00:00Z')),
+            },
+        });
+
+        // Create Department Schedules
+        await prisma.departmentSchedule.create({
+            data: {
+                name: 'Test Department Schedul Schedule',
+                departmentId: department.id,
+                scheduleId: schedule.id,
+                role: 'ENGINEER',
+            },
+        });
+
+    });
+
     it('should get all department schedules', async () => {
         const responseDept = await request(server).get('/api/department').expect(200);
         expect(responseDept.body.length).toBeGreaterThanOrEqual(1);

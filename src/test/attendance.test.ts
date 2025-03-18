@@ -25,13 +25,11 @@ describe('Attendance Routes', () => {
             date: new Date(),
             status: 'DONE',
             scheduleType: 'FIXED',
-            timeIn: new Date('2024-09-09T08:00:00Z'),
-            timeOut: new Date('2024-09-09T19:00:00Z'),
+            timeIn: new Date(2021, 0, 1, 8, 0, 0),
+            timeOut: new Date(2021, 0, 1, 17, 0, 0),
             timeHoursWorked: 8,
             overTimeTotal: 0,
             timeTotal: 8,
-            lunchTimeIn: new Date('2024-09-01T12:00:00Z'),
-            lunchTimeOut: new Date('2024-09-01T13:00:00Z'),
             lunchTimeTotal: 1,
         };
 
@@ -46,23 +44,22 @@ describe('Attendance Routes', () => {
 
         const newAttendance = {
             employeeId: employee?.id,
-            date: new Date(),
+            date: new Date(2021, 0, 1, 8, 0, 0),
             status: 'DONE',
             scheduleType: 'FIXED',
-            timeIn: new Date('2024-09-09T08:00:00Z'),
-            timeOut: new Date('2024-09-09T19:00:00Z'),
+            timeIn: new Date(2021, 0, 1, 8, 0, 0),
+            timeOut: new Date(2021, 0, 1, 17, 0, 0),
             timeHoursWorked: 8,
             overTimeTotal: 0,
             timeTotal: 8,
-            lunchTimeIn: new Date('2024-09-01T12:00:00Z'),
-            lunchTimeOut: new Date('2024-09-01T13:00:00Z'),
             lunchTimeTotal: 1,
         };
+
         const attendance = await prisma.attendance.findFirst();
 
         const updatedAttendance = {
             ...newAttendance,
-            status: 'BREAK'
+            status: 'DONE'
         };
 
         await request(app)

@@ -7,37 +7,10 @@ import { Employee, RequestChangePersonalSchedule } from "@prisma/client";
 
 describe('Request Personal Schedule', () => {
     let employee: Employee;
-    let teamLeader;
-    let admin;
     let personalSchedule;
     let requestedChangePersonalSchedule: RequestChangePersonalSchedule;
 
     beforeAll(async () => {
-        teamLeader = await EmployeeService.createEmployee({
-            email: 'teamLeaderRPS@example.com',
-            username: "teamLeaderRPS",
-            accessLevel: "TEAM_LEADER",
-            passwordCredentials: "teamLeaderRPS",
-            firstName: "teamLeaderRPS",
-            lastName: "teamLeaderRPS",
-            middleName: "teamLeaderRPS",
-            role: "TEAM_LEADER",
-            isAllowedRequestOvertime: true
-        });
-
-        admin = await EmployeeService.createEmployee({
-            email: 'adminRPS@example.com',
-            username: "adminRPS",
-            accessLevel: "ADMIN",
-            passwordCredentials: "adminRPS",
-            firstName: "adminRPS",
-            lastName: "adminRPS",
-            middleName: "adminRPS",
-            role: "ADMIN",
-            isAllowedRequestOvertime: false,
-            isActive: true
-        });
-
         employee = await EmployeeService.createEmployee({
             email: 'employeeRPS@example.com',
             username: "employeeRPS",
@@ -49,7 +22,6 @@ describe('Request Personal Schedule', () => {
             role: "EMPLOYEE",
             isAllowedRequestOvertime: false
         });
-
     });
 
     it('GET /api/personal-schedule should return all personal schedules', async () => {
@@ -116,7 +88,7 @@ describe('Request Personal Schedule', () => {
         expect(body.scheduleType).toBe(requestedChangePersonalSchedule.scheduleType);
     });
 
-    it('PUT /api/personal-schedule/request-change should update requested change personal schedule', async () => {
+    it('PUT /api/personal-schedule/request-change/:id should update requested change personal schedule', async () => {
         const updatedSchedule = {
             employeeId: employee.id,
             day: ['MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY'],
@@ -124,6 +96,7 @@ describe('Request Personal Schedule', () => {
             endTime: initializeHourTimeZone(new Date(2025, 0, 1, 18, 0, 0)),
             name: 'Regular Schedule',
             scheduleType: 'FIXED',
+            reason: "I want to change my schedule",
             status: 'APPROVED_BY_TEAM_LEADER'
         };
 
@@ -133,8 +106,30 @@ describe('Request Personal Schedule', () => {
             .expect(200);
     });
 
+    it('POST /api/personal-schedule/request-change/:id/apply should apply requested change personal schedule', async () => {
+        await request(server)
+            .post(`/api/personal-schedule/request-change/${requestedChangePersonalSchedule.id}/apply`)
+            .send({})
+            .expect(200);
+    });
+
 
     it('DELETE /api/personal-schedule/request-change should delete requested change personal schedule', async () => {
+        await request(server).post('/api/personal-schedule/request-change').send({
+            employeeId: employee.id,
+            day: ['MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY'],
+            startTime: new Date(initializeHourTimeZone(new Date(2025, 0, 1, 8, 0, 0))),
+            endTime: new Date(initializeHourTimeZone(new Date(2025, 0, 1, 17, 0, 0))),
+            name: 'Regular Schedule',
+            scheduleType: 'FIXED',
+            status: 'SUBMITTED'
+        }).expect(200);
+
+        const personalSchedules = await request(server).get('/api/personal-schedule/request-change').expect(200);
+        const body = personalSchedules.body;
+        expect(body.length).toBeGreaterThanOrEqual(1);
+        requestedChangePersonalSchedule = body[0];
+
         await request(server)
             .delete(`/api/personal-schedule/request-change/${requestedChangePersonalSchedule.id}`)
             .expect(200);
@@ -145,5 +140,4 @@ describe('Request Personal Schedule', () => {
             .send({})
             .expect(404);
     });
-
 });

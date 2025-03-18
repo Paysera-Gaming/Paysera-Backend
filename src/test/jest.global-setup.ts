@@ -62,8 +62,8 @@ export default async () => {
 
         const leader1 = await prisma.employee.create({
             data: {
-                email: "sample12@gmail.com",
-                username: 'TEAM_LEADER12345',
+                email: "FIRST@gmail.com",
+                username: 'FIRST_TEAMLEAD',
                 accessLevel: 'TEAM_LEADER',
                 passwordCredentials: hashPasswordL,
                 firstName: 'Leader1',

@@ -9,8 +9,6 @@ describe('Test for flexi', () => {
     let departmentId: number;
     let departmentScheduleId: number;
     let timeIn: Date;
-    let lunchTimeIn: Date;
-    let lunchTimeOut: Date;
 
     beforeAll(async () => {
         // Create a department
