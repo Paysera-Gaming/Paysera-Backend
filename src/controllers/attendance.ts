@@ -61,12 +61,8 @@ export const AttendanceController = {
             throw raiseHttpError(404, "Employee not found");
         }
 
-        console.log(existingEmployee, body.employeeId, "existingEmployee");
-
         const existingAttendance = await AttendanceService.getAttendanceByDateAndEmployeeId(formatDate(body.date), body.employeeId);
         if (existingAttendance) {
-            console.log(existingAttendance, "existingAttendance");
-
             throw raiseHttpError(400, "Attendance record already exists");
         }
 
@@ -94,7 +90,6 @@ export const AttendanceController = {
 
         io.emit('attendance');
         res.status(201).send(data);
-
     },
     async updateAttendance(req: Request, res: Response) {
         const attendanceId = Number(req.params.id);
@@ -214,7 +209,7 @@ export const AttendanceController = {
         }
 
         const data = {
-            date: format(body.date, 'yyyy-MM-dd'),
+            date: formatDate(body.date),
             status: body.status,
             timeOut: body.timeOut,
             timeIn: body.timeIn,
