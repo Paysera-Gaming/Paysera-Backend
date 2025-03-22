@@ -433,32 +433,131 @@ export const seedDatabase = async () => {
             },
         });
 
-        // // Time in for the day
-        // const res = await request('http://localhost:8080').post('/api/attendance/time-in').send({
-        //     employeeId: employee1.id,
-        //     timeStamp: (new Date(2025, 0, 28, 8, 0, 0))
-        // });
 
-        // const res1 = await request('http://localhost:8080').post('/api/attendance/time-out').send({
-        //     employeeId: employee1.id,
-        //     timeStamp: (new Date(2025, 0, 28, 17, 0, 0))
-        // });
+        const yesterday = new Date();
+        yesterday.setDate(yesterday.getDate() - 1);
 
-        // console.log(res.body, res1.body);
+        await prisma.attendance.create({
+            data: {
+                employeeId: employee2.id,
+                date: formatDate(yesterday),
+                status: 'PAID_LEAVE',
+                scheduleType: 'FIXED',
+                timeIn: new Date(yesterday.setHours(8, 0, 0, 0)),
+                timeOut: new Date(yesterday.setHours(17, 0, 0, 0)),
+                timeTotal: 9,
+                timeHoursWorked: 8,
+                overTimeTotal: 0,
+                RequestLeaveStatus: "APPROVED_BY_ADMIN"
+            },
+        });
 
 
-        // // Holiday seeds
-        // await request('http://localhost:8080').post('/api/holiday').send({
-        //     name: 'Christmas',
-        //     month: 'DECEMBER',
-        //     day: 25,
-        // });
+        await prisma.attendance.create({
+            data: {
+                employeeId: employee2.id,
+                date: formatDate(yesterday),
+                status: 'PAID_LEAVE',
+                scheduleType: 'FIXED',
+                timeIn: new Date(yesterday.setHours(8, 0, 0, 0)),
+                timeOut: new Date(yesterday.setHours(17, 0, 0, 0)),
+                timeTotal: 9,
+                timeHoursWorked: 8,
+                overTimeTotal: 0,
+                RequestLeaveStatus: "REJECTED_BY_ADMIN"
 
-        // await request('http://localhost:8080').post('/api/holiday').send({
-        //     name: 'New Year',
-        //     month: 'JANUARY',
-        //     day: 1,
-        // });
+            },
+        });
+
+        await prisma.attendance.create({
+            data: {
+                employeeId: employee3.id,
+                date: formatDate(yesterday),
+                status: 'PAID_LEAVE',
+                scheduleType: 'FIXED',
+                timeIn: new Date(yesterday.setHours(8, 0, 0, 0)),
+                timeOut: new Date(yesterday.setHours(17, 0, 0, 0)),
+                timeTotal: 9,
+                timeHoursWorked: 8,
+                overTimeTotal: 0,
+            },
+        });
+
+        await prisma.attendance.create({
+            data: {
+                employeeId: employee4.id,
+                date: formatDate(yesterday),
+                status: 'PAID_LEAVE',
+                scheduleType: 'FIXED',
+                timeIn: new Date(yesterday.setHours(8, 0, 0, 0)),
+                timeOut: new Date(yesterday.setHours(17, 0, 0, 0)),
+                timeTotal: 9,
+                timeHoursWorked: 8,
+                overTimeTotal: 0,
+            },
+        });
+
+        await prisma.attendance.create({
+            data: {
+                employeeId: employee5.id,
+                date: formatDate(yesterday),
+                status: 'PAID_LEAVE',
+                scheduleType: 'FIXED',
+                timeIn: new Date(yesterday.setHours(8, 0, 0, 0)),
+                timeOut: new Date(yesterday.setHours(17, 0, 0, 0)),
+                timeTotal: 9,
+                timeHoursWorked: 8,
+                overTimeTotal: 0,
+                RequestLeaveStatus: "NO_REQUEST"
+            },
+        });
+
+        await prisma.attendance.create({
+            data: {
+                employeeId: employee6.id,
+                date: formatDate(yesterday),
+                status: 'PAID_LEAVE',
+                scheduleType: 'FIXED',
+                timeIn: new Date(yesterday.setHours(8, 0, 0, 0)),
+                timeOut: new Date(yesterday.setHours(17, 0, 0, 0)),
+                timeTotal: 9,
+                timeHoursWorked: 8,
+                overTimeTotal: 0,
+                RequestLeaveStatus: "APPROVED_BY_TEAM_LEADER"
+            },
+        });
+
+        await prisma.attendance.create({
+            data: {
+                employeeId: employee7.id,
+                date: formatDate(yesterday),
+                status: 'PAID_LEAVE',
+                scheduleType: 'FIXED',
+                timeIn: new Date(yesterday.setHours(8, 0, 0, 0)),
+                timeOut: new Date(yesterday.setHours(17, 0, 0, 0)),
+                timeTotal: 9,
+                timeHoursWorked: 8,
+                overTimeTotal: 0,
+                RequestLeaveStatus: "REJECTED_BY_TEAM_LEADER"
+            },
+        });
+
+        await prisma.attendance.create({
+            data: {
+                employeeId: employee8.id,
+                date: formatDate(yesterday),
+                status: 'PAID_LEAVE',
+                scheduleType: 'FIXED',
+                timeIn: new Date(yesterday.setHours(8, 0, 0, 0)),
+                timeOut: new Date(yesterday.setHours(17, 0, 0, 0)),
+                timeTotal: 9,
+                timeHoursWorked: 9,
+                overTimeTotal: 0,
+                RequestLeaveStatus: "APPROVED_BY_ADMIN"
+            },
+        });
+
+
         // Create Holidays
         await prisma.holiday.create({
             data: {
