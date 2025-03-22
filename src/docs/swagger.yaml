@@ -78,7 +78,6 @@ paths:
                   message:
                     type: string
                     example: "Logout successful"
-
   /info:
     get:
       tags:
@@ -1013,12 +1012,10 @@ paths:
                 limitOvertime:
                   type: number
                   example: 4
-                isAllowedOvertime:
-                  type: boolean
-                  example: true
-                isRejectedOvertime:
-                  type: boolean
-                  example: true
+                RequestOverTimeStatus:
+                  type: string
+                  default: "APPROVED_BY_ADMIN"
+                  $ref: "#/components/schemas/RequestStatus"
       responses:
         "200":
           description: Overtime request recorded successfully.
@@ -1201,7 +1198,6 @@ paths:
           description: Announcement deleted successfully
         "404":
           description: Announcement not found
-
   /api/holiday:
     get:
       summary: Get all holidays
@@ -1300,6 +1296,143 @@ paths:
         "404":
           description: Holiday not found
 
+  "/api/personal-schedule/request-change":
+    get:
+      tags:
+        - Personal Schedule
+      summary: Retrieve all requested schedule changes
+      responses:
+        "200":
+          description: List of all requested schedule changes
+    post:
+      tags:
+        - Personal Schedule
+      summary: Create a new schedule change request
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                employeeId:
+                  type: integer
+                scheduleType:
+                  type: string
+                  enum: [FIXED, FLEXI, SUPER_FLEXI]
+                day:
+                  type: array
+                  items:
+                    $ref: "#/components/schemas/Day"
+                startTime:
+                  type: string
+                  format: date-time
+                endTime:
+                  type: string
+                  format: date-time
+                isAllowedOvertime:
+                  type: boolean
+                reason:
+                  type: string
+                limitOvertime:
+                  type: number
+                status:
+                  type: string
+                startTimeLimit:
+                  type: string
+                  format: date-time
+      responses:
+        "200":
+          description: Change request created
+        "400":
+          description: Invalid employee ID or other input errors
+        "404":
+          description: Employee not found or no personal schedule
+
+  /api/personal-schedule/request-change/{id}:
+    get:
+      tags:
+        - Personal Schedule
+      summary: Retrieve a requested schedule change
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Schedule change request found
+        "400":
+          description: Invalid request ID
+        "404":
+          description: Requested change personal schedule not found
+    put:
+      tags:
+        - Personal Schedule
+      summary: Update a requested schedule change
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        "200":
+          description: Requested change personal schedule has been updated
+        "400":
+          description: Invalid request ID
+        "404":
+          description: Requested change personal schedule not found
+    delete:
+      tags:
+        - Personal Schedule
+      summary: Delete a requested schedule change
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Requested change personal schedule has been deleted
+        "400":
+          description: Invalid request ID
+        "404":
+          description: Requested change personal schedule not found
+
+  /api/personal-schedule/request-change/{id}/apply:
+    post:
+      tags:
+        - Personal Schedule
+      summary: Apply a requested schedule change
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        "200":
+          description: Schedule change request applied
+        "400":
+          description: Invalid request ID
+        "404":
+          description: Request or employee schedule not found
+
 # END OF ROUTES
 components:
   schemas:
@@ -1329,14 +1462,6 @@ components:
           type: number
         timeTotal:
           type: number
-        lunchTimeIn:
-          type: string
-          format: date-time
-        lunchTimeOut:
-          type: string
-          format: date-time
-        lunchTimeTotal:
-          type: number
         createdAt:
           type: string
           format: date-time
@@ -1345,6 +1470,12 @@ components:
           format: date-time
         employee:
           $ref: "#/components/schemas/Employee"
+        RequestOverTimeStatus:
+          default: "NO_REQUEST"
+          $ref: "#/components/schemas/RequestStatus"
+        RequestLeaveStatus:
+          default: "NO_REQUEST"
+          $ref: "#/components/schemas/RequestStatus"
     Schedule:
       type: object
       properties:
@@ -1513,6 +1644,10 @@ components:
           type: integer
         Leader:
           $ref: "#/components/schemas/Employee"
+        auditorId:
+          type: integer
+        Auditor:
+          $ref: "#/components/schemas/Employee"
         DepartmentSchedule:
           type: array
           items:
@@ -1537,6 +1672,9 @@ components:
           type: string
           example: "Handles all tech-related tasks"
         leaderId:
+          type: integer
+          example: 1
+        auditorId:
           type: integer
           example: 1
     EmployeeAssignment:
@@ -1624,12 +1762,6 @@ components:
           type: string
           format: date-time
           example: "2024-09-06T18:00:00Z"
-        # limitWorkHoursDay:
-        #   type: number
-        #   example: 8
-        # allowedOvertime:
-        #   type: boolean
-        #   example: false
         scheduleType:
           type: string
           enum:
@@ -1679,29 +1811,30 @@ components:
           type: string
           format: date
         status:
+          default: "ONGOING"
           type: string
+          $ref: "#/components/schemas/AttendanceStatus"
         scheduleType:
           type: string
-          enum:
-            - FIXED
-            - SUPER_FLEXI
-            - FLEXI
+          $ref: "#/components/schemas/ScheduleType"
         timeIn:
           type: string
           format: date-time
         timeOut:
           type: string
           format: date-time
-        allowedOvertime:
+        isAllowedOvertime:
           type: boolean
-        # lunchTimeIn:
-        #   type: string
-        #   format: date-time
-        # lunchTimeOut:
-        #   type: string
-        #   format: date-time
         overtimeTotal:
           type: number
+        RequestOverTimeStatus:
+          optional: true
+          type: string
+          $ref: "#/components/schemas/RequestStatus"
+        RequestLeaveStatus:
+          optional: true
+          type: string
+          $ref: "#/components/schemas/RequestStatus"
     Announcement:
       type: object
       properties:
@@ -1767,14 +1900,16 @@ components:
         timeOut:
           type: string
           format: date-time
-        # lunchTimeIn:
-        #   type: string
-        #   format: date-time
-        # lunchTimeOut:
-        #   type: string
-        #   format: date-time
+        isAllowedOvertime:
+          type: boolean
         overtimeTotal:
           type: number
+        RequestOverTimeStatus:
+          type: string
+          $ref: "#/components/schemas/RequestStatus"
+        RequestLeaveStatus:
+          type: string
+          $ref: "#/components/schemas/RequestStatus"
     AccessLevel:
       type: string
       enum:
@@ -1802,9 +1937,8 @@ components:
     AttendanceStatus:
       type: string
       enum:
-        - BREAK
         - DONE
-        - UNPAID_LEAVE
+        # - UNPAID_LEAVE
         - PAID_LEAVE
         - ONGOING
     Month:
@@ -1822,3 +1956,12 @@ components:
         - OCTOBER
         - NOVEMBER
         - DECEMBER
+    RequestStatus:
+      type: string
+      enum:
+        - APPROVED_BY_ADMIN
+        - APPROVED_BY_TEAM_LEADER
+        - REJECTED_BY_ADMIN
+        - REJECTED_BY_TEAM_LEADER
+        - PENDING
+        - NO_REQUEST
