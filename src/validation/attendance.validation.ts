@@ -19,9 +19,9 @@ function validateAttendance(attendance: Attendance) {
         // lunchTimeOut: z.date().optional(),
         lunchTimeTotal: z.number().optional(),
         RequestLeaveStatus: z.enum(["NO_REQUEST", "PENDING", "APPROVED_BY_ADMIN",
-            "REJECT_BY_ADMIN", "REJECT_BY_TEAM_LEADER"]).optional(),
+            "REJECTED_BY_ADMIN", "REJECTED_BY_TEAM_LEADER"]).optional(),
         RequestOverTimeStatus: z.enum(["NO_REQUEST", "PENDING", "APPROVED_BY_ADMIN",
-            "REJECT_BY_ADMIN", "REJECT_BY_TEAM_LEADER"]).optional(),
+            "REJECTED_BY_ADMIN", "REJECTED_BY_TEAM_LEADER"]).optional(),
 
         createdAt: z.date().optional(),
         updatedAt: z.date().optional(),
@@ -47,9 +47,9 @@ function validateCreateAttendance(attendance: any) {
         lunchTimeTotal: z.number().optional(),
 
         RequestLeaveStatus: z.enum(["NO_REQUEST", "PENDING", "APPROVED_BY_ADMIN",
-            "REJECT_BY_ADMIN", "REJECT_BY_TEAM_LEADER"]).optional(),
+            "REJECTED_BY_ADMIN", "REJECTED_BY_TEAM_LEADER"]).optional(),
         RequestOverTimeStatus: z.enum(["NO_REQUEST", "PENDING", "APPROVED_BY_ADMIN",
-            "REJECT_BY_ADMIN", "REJECT_BY_TEAM_LEADER"]).optional(),
+            "REJECTED_BY_ADMIN", "REJECTED_BY_TEAM_LEADER"]).optional(),
 
         createdAt: z.date().optional(),
         updatedAt: z.date().optional(),
@@ -84,9 +84,9 @@ function validateUpdateAttendance(attendance: any) {
         lunchTimeTotal: z.number().optional(),
 
         RequestLeaveStatus: z.enum(["NO_REQUEST", "PENDING", "APPROVED_BY_ADMIN",
-            "REJECT_BY_ADMIN", "REJECT_BY_TEAM_LEADER"]).optional(),
+            "REJECTED_BY_ADMIN", "REJECTED_BY_TEAM_LEADER"]).optional(),
         RequestOverTimeStatus: z.enum(["NO_REQUEST", "PENDING", "APPROVED_BY_ADMIN",
-            "REJECT_BY_ADMIN", "REJECT_BY_TEAM_LEADER"]).optional(),
+            "REJECTED_BY_ADMIN", "REJECTED_BY_TEAM_LEADER"]).optional(),
 
         createdAt: z.date().optional(),
         updatedAt: z.date().optional(),
