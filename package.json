@@ -9,7 +9,7 @@
                 "migrate:test": "dotenv -e .env.test  npx prisma migrate dev --name test",
                 "migrate": "dotenv -e .env.development npx prisma migrate dev --name init",
                 "test": "dotenv -e .env.test -- jest --verbose --no-watchman --no-cache --runInBand",
-                "dev": "dotenv -e .env.development ts-node-dev ./src/index.ts",
+                "dev": "dotenv -e .env.development ts-node ./src/config/seed.ts && dotenv -e .env.development ts-node-dev ./src/index.ts",
                 "start": "node dist/src/index.js",
                 "clean": "rm -rf dist",
                 "build": "npm run clean && tsc",
