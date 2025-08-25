@@ -103,6 +103,57 @@ export const seedDatabase = async () => {
             },
         });
 
+        const dept2 = await prisma.employee.create({
+            data: {
+                email: "dept2@gmail.com",
+                username: 'dept2',
+                accessLevel: 'EMPLOYEE',
+                passwordCredentials: hashPasswordL,
+                firstName: 'dept2 ',
+                lastName: 'dept2 ',
+                middleName: 'dept2 ',
+                role: 'ENGINEER',
+                departmentId: department2.id,
+                Attendance: {
+                    create: {
+                        date: formatDate(new Date()),
+                        status: 'DONE',
+                        scheduleType: 'FIXED',
+                        timeIn: new Date(new Date().setHours(8, 0, 0, 0)),
+                        timeOut: new Date(new Date().setHours(17, 0, 0, 0)),
+                        timeTotal: 9,
+                        timeHoursWorked: 8,
+                    },
+                },
+                PersonalSchedule: {
+                    create: {
+                        day: ['MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY'],
+                        Schedule: {
+                            create: {
+                                scheduleType: 'FIXED',
+                                startTime: new Date(new Date().setHours(8, 0, 0, 0)),
+                                endTime: new Date(new Date().setHours(17, 0, 0, 0)),
+                            },
+                        }
+                    },
+                },
+
+            },
+        });
+
+        await prisma.attendance.create({
+            data: {
+                employeeId: dept2.id,
+                date: formatDate(new Date()),
+                status: 'PAID_LEAVE',
+                scheduleType: 'FIXED',
+                timeIn: new Date(new Date().setHours(8, 0, 0, 0)),
+                timeOut: new Date(new Date().setHours(17, 0, 0, 0)),
+                timeTotal: 8,
+                RequestLeaveStatus: "APPROVED_BY_TEAM_LEADER"
+            },
+        });
+
         const hashPasswordE = await bcrypt.hash('EMPLOYEE12345', configEnv.SALT_ROUNDS);
         // Create Employees
         const employee1 = await prisma.employee.create({
@@ -366,19 +417,35 @@ export const seedDatabase = async () => {
             },
         });
 
+        const otherDate = new Date();
+        otherDate.setDate(otherDate.getDate() - 2);
+
         // Create Attendance Records
         await prisma.attendance.create({
             data: {
                 employeeId: employee1.id,
-                date: formatDate(new Date()),
-                status: 'DONE',
-                scheduleType: 'FLEXI',
-                timeIn: new Date(new Date().setHours(8, 0, 0, 0)),
-                timeOut: new Date(new Date().setHours(17, 0, 0, 0)),
+                date: formatDate(otherDate),
+                status: 'PAID_LEAVE',
+                scheduleType: 'FIXED',
+                timeIn: new Date(otherDate.setHours(8, 0, 0, 0)),
+                timeOut: new Date(otherDate.setHours(17, 0, 0, 0)),
                 timeTotal: 8,
+                RequestLeaveStatus: "APPROVED_BY_TEAM_LEADER"
             },
         });
 
+        await prisma.attendance.create({
+            data: {
+                employeeId: employee1.id,
+                date: formatDate(otherDate),
+                status: 'PAID_LEAVE',
+                scheduleType: 'FIXED',
+                timeIn: new Date(otherDate.setHours(8, 0, 0, 0)),
+                timeOut: new Date(otherDate.setHours(17, 0, 0, 0)),
+                timeTotal: 8,
+                RequestLeaveStatus: "APPROVED_BY_TEAM_LEADER"
+            },
+        });
         // Create Attendance Records
         await prisma.attendance.create({
             data: {
@@ -434,130 +501,130 @@ export const seedDatabase = async () => {
         });
 
 
-        const yesterday = new Date();
-        yesterday.setDate(yesterday.getDate() - 1);
+        // const yesterday = new Date();
+        // yesterday.setDate(yesterday.getDate() - 1);
 
-        await prisma.attendance.create({
-            data: {
-                employeeId: employee2.id,
-                date: formatDate(yesterday),
-                status: 'PAID_LEAVE',
-                scheduleType: 'FIXED',
-                timeIn: new Date(yesterday.setHours(8, 0, 0, 0)),
-                timeOut: new Date(yesterday.setHours(17, 0, 0, 0)),
-                timeTotal: 9,
-                timeHoursWorked: 8,
-                overTimeTotal: 0,
-                RequestLeaveStatus: "APPROVED_BY_ADMIN"
-            },
-        });
-
-
-        await prisma.attendance.create({
-            data: {
-                employeeId: employee2.id,
-                date: formatDate(yesterday),
-                status: 'PAID_LEAVE',
-                scheduleType: 'FIXED',
-                timeIn: new Date(yesterday.setHours(8, 0, 0, 0)),
-                timeOut: new Date(yesterday.setHours(17, 0, 0, 0)),
-                timeTotal: 9,
-                timeHoursWorked: 8,
-                overTimeTotal: 0,
-                RequestLeaveStatus: "REJECTED_BY_ADMIN"
-
-            },
-        });
-
-        await prisma.attendance.create({
-            data: {
-                employeeId: employee3.id,
-                date: formatDate(yesterday),
-                status: 'PAID_LEAVE',
-                scheduleType: 'FIXED',
-                timeIn: new Date(yesterday.setHours(8, 0, 0, 0)),
-                timeOut: new Date(yesterday.setHours(17, 0, 0, 0)),
-                timeTotal: 9,
-                timeHoursWorked: 8,
-                overTimeTotal: 0,
-            },
-        });
-
-        await prisma.attendance.create({
-            data: {
-                employeeId: employee4.id,
-                date: formatDate(yesterday),
-                status: 'PAID_LEAVE',
-                scheduleType: 'FIXED',
-                timeIn: new Date(yesterday.setHours(8, 0, 0, 0)),
-                timeOut: new Date(yesterday.setHours(17, 0, 0, 0)),
-                timeTotal: 9,
-                timeHoursWorked: 8,
-                overTimeTotal: 0,
-            },
-        });
-
-        await prisma.attendance.create({
-            data: {
-                employeeId: employee5.id,
-                date: formatDate(yesterday),
-                status: 'PAID_LEAVE',
-                scheduleType: 'FIXED',
-                timeIn: new Date(yesterday.setHours(8, 0, 0, 0)),
-                timeOut: new Date(yesterday.setHours(17, 0, 0, 0)),
-                timeTotal: 9,
-                timeHoursWorked: 8,
-                overTimeTotal: 0,
-                RequestLeaveStatus: "NO_REQUEST"
-            },
-        });
-
-        await prisma.attendance.create({
-            data: {
-                employeeId: employee6.id,
-                date: formatDate(yesterday),
-                status: 'PAID_LEAVE',
-                scheduleType: 'FIXED',
-                timeIn: new Date(yesterday.setHours(8, 0, 0, 0)),
-                timeOut: new Date(yesterday.setHours(17, 0, 0, 0)),
-                timeTotal: 9,
-                timeHoursWorked: 8,
-                overTimeTotal: 0,
-                RequestLeaveStatus: "APPROVED_BY_TEAM_LEADER"
-            },
-        });
-
-        await prisma.attendance.create({
-            data: {
-                employeeId: employee7.id,
-                date: formatDate(yesterday),
-                status: 'PAID_LEAVE',
-                scheduleType: 'FIXED',
-                timeIn: new Date(yesterday.setHours(8, 0, 0, 0)),
-                timeOut: new Date(yesterday.setHours(17, 0, 0, 0)),
-                timeTotal: 9,
-                timeHoursWorked: 8,
-                overTimeTotal: 0,
-                RequestLeaveStatus: "REJECTED_BY_TEAM_LEADER"
-            },
-        });
-
-        await prisma.attendance.create({
-            data: {
-                employeeId: employee8.id,
-                date: formatDate(yesterday),
-                status: 'PAID_LEAVE',
-                scheduleType: 'FIXED',
-                timeIn: new Date(yesterday.setHours(8, 0, 0, 0)),
-                timeOut: new Date(yesterday.setHours(17, 0, 0, 0)),
-                timeTotal: 9,
-                timeHoursWorked: 9,
-                overTimeTotal: 0,
-                RequestLeaveStatus: "APPROVED_BY_ADMIN"
-            },
-        });
+        // await prisma.attendance.create({
+        //     data: {
+        //         employeeId: employee2.id,
+        //         date: formatDate(yesterday),
+        //         status: 'PAID_LEAVE',
+        //         scheduleType: 'FIXED',
+        //         timeIn: new Date(yesterday.setHours(8, 0, 0, 0)),
+        //         timeOut: new Date(yesterday.setHours(17, 0, 0, 0)),
+        //         timeTotal: 9,
+        //         timeHoursWorked: 8,
+        //         overTimeTotal: 0,
+        //         RequestLeaveStatus: "APPROVED_BY_ADMIN"
+        //     },
+        // });
 
 
+        // await prisma.attendance.create({
+        //     data: {
+        //         employeeId: employee2.id,
+        //         date: formatDate(yesterday),
+        //         status: 'PAID_LEAVE',
+        //         scheduleType: 'FIXED',
+        //         timeIn: new Date(yesterday.setHours(8, 0, 0, 0)),
+        //         timeOut: new Date(yesterday.setHours(17, 0, 0, 0)),
+        //         timeTotal: 9,
+        //         timeHoursWorked: 8,
+        //         overTimeTotal: 0,
+        //         RequestLeaveStatus: "REJECTED_BY_ADMIN"
+
+        //     },
+        // });
+
+        // await prisma.attendance.create({
+        //     data: {
+        //         employeeId: employee3.id,
+        //         date: formatDate(yesterday),
+        //         status: 'PAID_LEAVE',
+        //         scheduleType: 'FIXED',
+        //         timeIn: new Date(yesterday.setHours(8, 0, 0, 0)),
+        //         timeOut: new Date(yesterday.setHours(17, 0, 0, 0)),
+        //         timeTotal: 9,
+        //         timeHoursWorked: 8,
+        //         overTimeTotal: 0,
+        //     },
+        // });
+
+        // await prisma.attendance.create({
+        //     data: {
+        //         employeeId: employee4.id,
+        //         date: formatDate(yesterday),
+        //         status: 'PAID_LEAVE',
+        //         scheduleType: 'FIXED',
+        //         timeIn: new Date(yesterday.setHours(8, 0, 0, 0)),
+        //         timeOut: new Date(yesterday.setHours(17, 0, 0, 0)),
+        //         timeTotal: 9,
+        //         timeHoursWorked: 8,
+        //         overTimeTotal: 0,
+        //     },
+        // });
+
+        // await prisma.attendance.create({
+        //     data: {
+        //         employeeId: employee5.id,
+        //         date: formatDate(yesterday),
+        //         status: 'PAID_LEAVE',
+        //         scheduleType: 'FIXED',
+        //         timeIn: new Date(yesterday.setHours(8, 0, 0, 0)),
+        //         timeOut: new Date(yesterday.setHours(17, 0, 0, 0)),
+        //         timeTotal: 9,
+        //         timeHoursWorked: 8,
+        //         overTimeTotal: 0,
+        //         RequestLeaveStatus: "NO_REQUEST"
+        //     },
+        // });
+
+        // await prisma.attendance.create({
+        //     data: {
+        //         employeeId: employee6.id,
+        //         date: formatDate(yesterday),
+        //         status: 'PAID_LEAVE',
+        //         scheduleType: 'FIXED',
+        //         timeIn: new Date(yesterday.setHours(8, 0, 0, 0)),
+        //         timeOut: new Date(yesterday.setHours(17, 0, 0, 0)),
+        //         timeTotal: 9,
+        //         timeHoursWorked: 8,
+        //         overTimeTotal: 0,
+        //         RequestLeaveStatus: "APPROVED_BY_TEAM_LEADER"
+        //     },
+        // });
+
+        // await prisma.attendance.create({
+        //     data: {
+        //         employeeId: employee7.id,
+        //         date: formatDate(yesterday),
+        //         status: 'PAID_LEAVE',
+        //         scheduleType: 'FIXED',
+        //         timeIn: new Date(yesterday.setHours(8, 0, 0, 0)),
+        //         timeOut: new Date(yesterday.setHours(17, 0, 0, 0)),
+        //         timeTotal: 9,
+        //         timeHoursWorked: 8,
+        //         overTimeTotal: 0,
+        //         RequestLeaveStatus: "REJECTED_BY_TEAM_LEADER"
+        //     },
+        // });
+
+        // await prisma.attendance.create({
+        //     data: {
+        //         employeeId: employee8.id,
+        //         date: formatDate(yesterday),
+        //         status: 'PAID_LEAVE',
+        //         scheduleType: 'FIXED',
+        //         timeIn: new Date(yesterday.setHours(8, 0, 0, 0)),
+        //         timeOut: new Date(yesterday.setHours(17, 0, 0, 0)),
+        //         timeTotal: 9,
+        //         timeHoursWorked: 9,
+        //         overTimeTotal: 0,
+        //         RequestLeaveStatus: "APPROVED_BY_ADMIN"
+        //     },
+        // });
+
+        // 
         // Create Holidays
         await prisma.holiday.create({
             data: {
