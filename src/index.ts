@@ -43,12 +43,15 @@ const limiter = rateLimit({
 app.use(limiter); // Rate limiting
 app.use(cookieParser()); // Parse cookies
 app.use(cors({
-    origin: [configEnv.ORIGIN, 'https://x3lkcvjr-5173.asse.devtunnels.ms'], // Reflect the request origin
+    origin: [configEnv.ORIGIN,], // Reflect the request origin
     credentials: true, // Allow sending cookies
+    methods: ['GET', 'POST', 'PUT', 'DELETE'], // Allow your React app to make requests
+
 })); // Enable CORS
 app.options('*', cors({
-    origin: [configEnv.ORIGIN, 'https://x3lkcvjr-5173.asse.devtunnels.ms'], // Reflect the request origin
+    origin: [configEnv.ORIGIN,], // Reflect the request origin
     credentials: true, // Allow sending cookies
+    methods: ['GET', 'POST', 'PUT', 'DELETE'], // Allow your React app to make requests
 })); // Handle preflight requests
 app.use(httpLoggerMiddleware);
 app.use(express.urlencoded({ extended: true })); // Parse URL-encoded bodies
@@ -58,7 +61,7 @@ app.use(hpp()); // Prevent HTTP Parameter Pollution
 app.use(compression()); // Compress responses
 // app.use(csurf({ cookie: true })); // CSRF protection
 
-// Routes
+// Routes   
 app.use(sampleRouter);
 app.use("/api", routerAuth);
 app.use("/api/announcements", routerAnnouncement);
