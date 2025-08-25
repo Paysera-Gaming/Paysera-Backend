@@ -21,16 +21,17 @@ const globalErrorHandler = (
 
     logger.error({
         method: req.method,
-        statusCode: error.status || 500,
+        statusCode: error.status || (error instanceof ZodError ? 400 : 500),
         url: req.originalUrl,
-        message: error.message,
+        message: error instanceof ZodError ? error.errors[0] : error.message || error,
         stack: process.env.NODE_ENV === 'development' ? error.stack : undefined,
         error: error,
+        body: req.body,
     });
 
     if (error instanceof ZodError) {
-        res.status(400).send(error.errors[0]?.message + " in path " + error.errors[0]?.path || 'Bad Request');
-
+        const zodError = error as ZodError;
+        res.status(400).send(zodError.errors[0]?.message + " in path " + zodError.errors[0]?.path[0] || 'Bad Request');
         return;
     }
 
